@@ -167,7 +167,11 @@ main{flex:1;padding:14px 14px calc(30px + var(--safe-b));max-width:860px;width:1
 .drop .btn{margin-top:10px}
 
 .plan-wrap{border:1px solid var(--border);border-radius:var(--r);overflow:hidden;background:var(--surface)}
-.plan-vp{position:relative;overflow:hidden;background:var(--surface-2);touch-action:none;min-height:180px}
+.plan-vp{
+  position:relative;overflow:hidden;background:var(--surface-2);
+  touch-action:pan-y;               /* le doigt fait défiler la page tant qu'on n'est pas zoomé */
+  height:52vh;min-height:220px;max-height:560px;
+}
 .plan-vp.placing{cursor:crosshair}
 .plan-inner{position:relative;transform-origin:0 0}
 .plan-inner img{width:100%;display:block;pointer-events:none;user-select:none}
@@ -198,8 +202,9 @@ main{flex:1;padding:14px 14px calc(30px + var(--safe-b));max-width:860px;width:1
   background:var(--navy);color:#fff;border-radius:var(--r);
   padding:9px 11px;font-size:13px;border-left:3px solid var(--accent);
 }
-.plan-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-.plan-actions .btn{flex:1;min-width:150px}
+.plan-actions{display:flex;gap:8px;margin-top:12px}
+.plan-actions .btn{flex:1;min-width:0;white-space:nowrap}
+.plan-actions #placeBtn{flex:1.7}
 
 /* ============================================================
    Fiches repères
@@ -251,9 +256,11 @@ main{flex:1;padding:14px 14px calc(30px + var(--safe-b));max-width:860px;width:1
    Planche
    ============================================================ */
 .board-tools{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
-.board-tools .btn{flex:1;min-width:150px}
+.board-tools .btn{flex:1;min-width:132px;white-space:nowrap}
 .board-scroll{overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--border);border-radius:var(--r);background:#fff}
-.board{position:relative;width:1360px;background:#fff;padding:20px;color:#15202B}
+.board-stage{position:relative;overflow:hidden}
+.board-scroll.fit{overflow:hidden}
+.board{position:relative;width:1360px;background:#fff;padding:20px;color:#15202B;transform-origin:top left}
 .board-head{text-align:center;padding-bottom:10px;border-bottom:1px solid #C3CCD6;margin-bottom:14px}
 .board-head h2{font-size:19px;color:#0E2338;font-weight:700}
 .board-head .meta{font-size:11px;color:#65727F;margin-top:4px}
@@ -421,6 +428,8 @@ const ICONS = {
   theme:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M19.1 4.9l-1.5 1.5M6.4 17.6l-1.5 1.5"/></svg>',
   close:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
   upload:'<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M4 15v3a2 2 0 002 2h12a2 2 0 002-2v-3"/></svg>',
+  fit:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H3v6M15 3h6v6M9 21H3v-6M15 21h6v-6"/></svg>',
+  zoomIn:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4.2-4.2M11 8.5v5M8.5 11h5"/></svg>',
   info:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.6v.4"/></svg>'
 };
 
@@ -458,6 +467,7 @@ function loadState() {
 
 let state = loadState();
 let view = "plan";                 // plan | pins | board
+let boardFit = true;               // planche : aperçu ajusté à la largeur de l'écran
 let placing = null;                // null | {mode:"new"} | {mode:"move", id}
 let focusPinId = null;             // repère à mettre en évidence dans la liste
 let saveError = null;
@@ -585,7 +595,7 @@ async function setPlanFromFile(file) {
   if (!file || !file.type.startsWith("image/")) return;
   try {
     state.planImage = await compressImage(file, PLAN_MAX_W, PLAN_Q);
-    zoom = { s: 1, tx: 0, ty: 0 };
+    resetZoom();
     save(); renderAll();
     toast("Plan importé", "ok");
   } catch (e) { toast("Import du plan impossible", "err"); }
@@ -681,7 +691,7 @@ async function resetProject() {
   });
   if (!ok) return;
   state = blankState();
-  zoom = { s: 1, tx: 0, ty: 0 };
+  resetZoom();
   placing = null; view = "plan";
   save(); renderAll();
   toast("Relevé réinitialisé");
@@ -690,27 +700,35 @@ async function resetProject() {
 /* ============================================================
    Vue Plan — zoom / déplacement / pose de repères
    ============================================================ */
-let zoom = { s: 1, tx: 0, ty: 0 };
-const MIN_S = 1, MAX_S = 8;
+let zoom = { s: 0, tx: 0, ty: 0 };   // s = 0 : échelle « ajustée » à recalculer
+let fitS = 1;                        // échelle à laquelle le plan entier tient dans le cadre
+const MAX_S = 8;
+const resetZoom = () => { zoom = { s: 0, tx: 0, ty: 0 }; };
 
 function applyZoom() {
   const inner = $("#planInner"), vp = $("#planVp");
   if (!inner || !vp) return;
   const vw = vp.clientWidth, vh = vp.clientHeight;
-  const cw = inner.offsetWidth * zoom.s, ch = inner.offsetHeight * zoom.s;
+  const iw = inner.offsetWidth, ih = inner.offsetHeight;
+  if (!iw || !ih) return;
+  fitS = Math.min(1, vh / ih);                       // 100 % = plan entier visible
+  zoom.s = Math.max(fitS, Math.min(MAX_S, zoom.s || fitS));
+  const cw = iw * zoom.s, ch = ih * zoom.s;
   zoom.tx = cw <= vw ? (vw - cw) / 2 : Math.min(0, Math.max(vw - cw, zoom.tx));
   zoom.ty = ch <= vh ? (vh - ch) / 2 : Math.min(0, Math.max(vh - ch, zoom.ty));
   inner.style.transform = `translate(${zoom.tx}px, ${zoom.ty}px) scale(${zoom.s})`;
   $$(".pin", inner).forEach(m => { m.style.transform = `translate(-50%,-50%) scale(${1 / zoom.s})`; });
+  // tant que le plan n'est pas agrandi, le doigt appartient au défilement de la page
+  vp.style.touchAction = (placing || zoom.s > fitS * 1.01) ? "none" : "pan-y";
   const lbl = $("#zLevel");
-  if (lbl) lbl.textContent = Math.round(zoom.s * 100) + "%";
+  if (lbl) lbl.textContent = Math.round((zoom.s / fitS) * 100) + "%";
 }
 function zoomAt(newS, cx, cy) {
   const vp = $("#planVp");
   if (!vp) return;
   const r = vp.getBoundingClientRect();
   const px = cx - r.left, py = cy - r.top;
-  const s = Math.max(MIN_S, Math.min(MAX_S, newS));
+  const s = Math.max(fitS, Math.min(MAX_S, newS));
   zoom.tx = px - ((px - zoom.tx) / zoom.s) * s;
   zoom.ty = py - ((py - zoom.ty) / zoom.s) * s;
   zoom.s = s;
@@ -754,7 +772,7 @@ function setupPlanInteraction(vp) {
 
   $("#zIn").onclick = () => { const r = vp.getBoundingClientRect(); zoomAt(zoom.s * 1.5, r.left + r.width / 2, r.top + r.height / 2); };
   $("#zOut").onclick = () => { const r = vp.getBoundingClientRect(); zoomAt(zoom.s / 1.5, r.left + r.width / 2, r.top + r.height / 2); };
-  $("#zReset").onclick = () => { zoom = { s: 1, tx: 0, ty: 0 }; applyZoom(); };
+  $("#zReset").onclick = () => { resetZoom(); applyZoom(); };
 
   const pts = new Map();
   let startDist = 0, startS = 1, startMid = null, panStart = null, moved = 0;
@@ -780,7 +798,7 @@ function setupPlanInteraction(vp) {
       const [a, b] = [...pts.values()];
       moved = 99;
       zoomAt(startS * (Math.hypot(a.x - b.x, a.y - b.y) / startDist), startMid.x, startMid.y);
-    } else if (pts.size === 1 && panStart && zoom.s > 1) {
+    } else if (pts.size === 1 && panStart && zoom.s > fitS * 1.01) {
       const dx = e.clientX - panStart.x, dy = e.clientY - panStart.y;
       moved = Math.max(moved, Math.hypot(dx, dy));
       zoom.tx = panStart.tx + dx;
@@ -865,7 +883,7 @@ function renderPlanView() {
     <div class="plan-actions">
       <button class="btn ${placing ? "" : "btn-primary"}" id="placeBtn">
         ${placing ? ICONS.close + " Annuler" : ICONS.plus + " Ajouter un repère"}</button>
-      <button class="btn" id="toBoard">${ICONS.grid} Voir la planche</button>
+      <button class="btn" id="toBoard">${ICONS.grid} Planche</button>
     </div>
     <p class="hint">${ICONS.info} Touche un repère sur le plan pour ouvrir sa fiche.</p>`;
 
@@ -1009,12 +1027,13 @@ function assignEdges() {
   edges.right.sort((a, b) => a.y - b.y);
   return edges;
 }
-const boardCaption = p => (p.note || "Désordre relevé") + (p.photos.length > 1 ? ` (+${p.photos.length - 1})` : "");
+// Pas de description saisie : la vignette ne porte que la photo.
+const boardCaption = p => p.note ? p.note + (p.photos.length > 1 ? ` (+${p.photos.length - 1})` : "") : "";
 function photoCard(p) {
   return `<div class="ph-card" data-card="${p.id}">
     <img src="${p.photos[0]}" alt="">
     <div class="num">${p.number}</div>
-    <div class="cap">${esc(boardCaption(p))}</div>
+    ${boardCaption(p) ? `<div class="cap">${esc(boardCaption(p))}</div>` : ""}
   </div>`;
 }
 
@@ -1042,10 +1061,12 @@ function renderBoardView() {
 
   main.innerHTML = `
     <div class="board-tools">
-      <button class="btn btn-primary" id="exportPng">${ICONS.down} Exporter en PNG</button>
-      <button class="btn" id="printBtn">${ICONS.print} Imprimer / PDF</button>
+      <button class="btn btn-primary" id="exportPng">${ICONS.down} Exporter PNG</button>
+      <button class="btn" id="printBtn">${ICONS.print} Imprimer</button>
+      <button class="btn" id="fitBtn">${boardFit ? ICONS.zoomIn + " Taille réelle" : ICONS.fit + " Ajuster à l'écran"}</button>
     </div>
-    <div class="board-scroll">
+    <div class="board-scroll ${boardFit ? "fit" : ""}" id="boardScroll">
+      <div class="board-stage" id="boardStage">
       <div class="board" id="board">
         <div class="board-head">
           <h2>${esc(state.projectName)}</h2>
@@ -1061,28 +1082,69 @@ function renderBoardView() {
         <div class="edge-row bottom">${edges.bottom.map(photoCard).join("")}</div>
         <svg class="board-lines" id="boardLines"></svg>
       </div>
+      </div>
     </div>
-    <p class="hint">${ICONS.info} Fais défiler horizontalement pour voir toute la planche. L'export PNG conserve la mise en page complète.</p>`;
+    <p class="hint">${ICONS.info} ${boardFit
+      ? "Aperçu ajusté à l'écran. L'export PNG et l'impression restent en pleine résolution."
+      : "Planche à sa taille réelle : fais défiler pour l'explorer."}</p>`;
 
   $("#exportPng").onclick = exportPNG;
   $("#printBtn").onclick = printReport;
+  $("#fitBtn").onclick = () => { boardFit = !boardFit; renderAll(); };
 
   const img = $("#boardImg");
-  if (img && !img.complete) img.onload = drawLines;
-  requestAnimationFrame(() => requestAnimationFrame(drawLines));
+  const refresh = () => { fitBoard(); drawLines(); };
+  if (img && !img.complete) img.onload = refresh;
+  requestAnimationFrame(() => requestAnimationFrame(refresh));
 }
 
-/* Géométrie partagée entre le rendu SVG et l'export canvas. */
-function connectorGeometry(cardRect, planRect, pin, originX, originY) {
-  const tx = planRect.left - originX + (pin.x / 100) * planRect.width;
-  const ty = planRect.top - originY + (pin.y / 100) * planRect.height;
-  const cx = cardRect.left - originX + cardRect.width / 2;
-  const cy = cardRect.top - originY + cardRect.height / 2;
+/* La planche est rendue à sa taille réelle (1360 px) puis réduite par un
+   transform pour tenir dans l'écran. On ramène donc toutes les mesures dans
+   l'espace « planche réelle », indépendamment de l'échelle d'aperçu. */
+function fitBoard() {
+  const scroll = $("#boardScroll"), stage = $("#boardStage"), board = $("#board");
+  if (!scroll || !stage || !board) return 1;
+  // l'aperçu tient dans la largeur ET dans la hauteur restante de l'écran
+  const top = scroll.getBoundingClientRect().top + window.scrollY;
+  const availH = Math.max(240, window.innerHeight - top - 64);
+  const k = boardFit
+    ? Math.min(1, scroll.clientWidth / board.offsetWidth, availH / board.offsetHeight)
+    : 1;
+  board.style.transform = k === 1 ? "none" : `scale(${k})`;
+  stage.style.width = Math.round(board.offsetWidth * k) + "px";
+  stage.style.height = Math.round(board.offsetHeight * k) + "px";
+  stage.style.margin = boardFit ? "0 auto" : "0";
+  return k;
+}
+function boardMetrics() {
+  const board = $("#board");
+  if (!board) return null;
+  const br = board.getBoundingClientRect();
+  const k = (br.width / board.offsetWidth) || 1;
+  return {
+    W: board.offsetWidth, H: board.offsetHeight,
+    rel(el) {
+      const r = el.getBoundingClientRect();
+      return {
+        left: (r.left - br.left) / k, top: (r.top - br.top) / k,
+        right: (r.right - br.left) / k, bottom: (r.bottom - br.top) / k,
+        width: r.width / k, height: r.height / k
+      };
+    }
+  };
+}
+
+/* Géométrie partagée entre le rendu SVG et l'export canvas (espace planche). */
+function connectorGeometry(cardRect, planRect, pin) {
+  const tx = planRect.left + (pin.x / 100) * planRect.width;
+  const ty = planRect.top + (pin.y / 100) * planRect.height;
+  const cx = cardRect.left + cardRect.width / 2;
+  const cy = cardRect.top + cardRect.height / 2;
   let sx, sy;
-  if (cardRect.bottom <= planRect.top + 2) { sx = cx; sy = cardRect.bottom - originY; }
-  else if (cardRect.top >= planRect.bottom - 2) { sx = cx; sy = cardRect.top - originY; }
-  else if (cardRect.right <= planRect.left + 2) { sx = cardRect.right - originX; sy = cy; }
-  else { sx = cardRect.left - originX; sy = cy; }
+  if (cardRect.bottom <= planRect.top + 2) { sx = cx; sy = cardRect.bottom; }
+  else if (cardRect.top >= planRect.bottom - 2) { sx = cx; sy = cardRect.top; }
+  else if (cardRect.right <= planRect.left + 2) { sx = cardRect.right; sy = cy; }
+  else { sx = cardRect.left; sy = cy; }
   const mx = (sx + tx) / 2, my = (sy + ty) / 2;
   const nx = -(ty - sy), ny = tx - sx;
   const len = Math.hypot(nx, ny) || 1;
@@ -1091,19 +1153,19 @@ function connectorGeometry(cardRect, planRect, pin, originX, originY) {
 }
 
 function drawLines() {
-  const board = $("#board"), svg = $("#boardLines"), plan = $("#boardImg");
-  if (!board || !svg || !plan) return;
-  const br = board.getBoundingClientRect(), pr = plan.getBoundingClientRect();
-  svg.setAttribute("viewBox", `0 0 ${br.width} ${br.height}`);
-  svg.setAttribute("width", br.width);
-  svg.setAttribute("height", br.height);
+  const svg = $("#boardLines"), plan = $("#boardImg"), m = boardMetrics();
+  if (!svg || !plan || !m) return;
+  const pr = m.rel(plan);
+  svg.setAttribute("viewBox", `0 0 ${m.W} ${m.H}`);
+  svg.setAttribute("width", m.W);
+  svg.setAttribute("height", m.H);
 
   let out = `<defs><marker id="ah" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
     <polygon points="0 0, 7 3.5, 0 7" fill="${ACCENT}"/></marker></defs>`;
   $$("[data-card]").forEach(card => {
     const pin = state.pins.find(p => p.id === card.dataset.card);
     if (!pin) return;
-    const g = connectorGeometry(card.getBoundingClientRect(), pr, pin, br.left, br.top);
+    const g = connectorGeometry(m.rel(card), pr, pin);
     out += `<path d="M ${g.sx} ${g.sy} Q ${g.qx} ${g.qy} ${g.tx} ${g.ty}" fill="none"
       stroke="${ACCENT}" stroke-width="3" stroke-linecap="round" marker-end="url(#ah)"/>`;
   });
@@ -1124,16 +1186,6 @@ function drawCover(ctx, img, x, y, w, h) {
   if (ar > dr) { sh = img.height; sw = sh * dr; sx = (img.width - sw) / 2; sy = 0; }
   else { sw = img.width; sh = sw / dr; sx = 0; sy = (img.height - sh) / 2; }
   ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
-}
-function roundRectPath(ctx, x, y, w, h, r) {
-  const rr = Math.min(r, w / 2, h / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + rr, y);
-  ctx.arcTo(x + w, y, x + w, y + h, rr);
-  ctx.arcTo(x + w, y + h, x, y + h, rr);
-  ctx.arcTo(x, y + h, x, y, rr);
-  ctx.arcTo(x, y, x + w, y, rr);
-  ctx.closePath();
 }
 function wrapText(ctx, text, maxW, maxLines) {
   const words = String(text).split(/\s+/);
@@ -1163,83 +1215,72 @@ async function exportPNG() {
   btn.textContent = "Génération…";
   try {
     const S = 2;
-    const br = board.getBoundingClientRect();
+    const m = boardMetrics();
     const canvas = document.createElement("canvas");
-    canvas.width = Math.round(br.width * S);
-    canvas.height = Math.round(br.height * S);
+    canvas.width = Math.round(m.W * S);
+    canvas.height = Math.round(m.H * S);
     const ctx = canvas.getContext("2d");
     ctx.scale(S, S);
     ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, br.width, br.height);
+    ctx.fillRect(0, 0, m.W, m.H);
     ctx.textBaseline = "top";
 
     // En-tête
     const head = board.querySelector(".board-head");
     const withPhoto = state.pins.filter(p => p.photos.length);
     if (head) {
-      const hr = head.getBoundingClientRect();
+      const hr = m.rel(head);
       ctx.textAlign = "center";
       ctx.fillStyle = INK;
       ctx.font = '700 19px -apple-system, Helvetica, Arial, sans-serif';
-      ctx.fillText(state.projectName, br.width / 2, hr.top - br.top);
+      ctx.fillText(state.projectName, m.W / 2, hr.top);
       ctx.fillStyle = "#65727F";
       ctx.font = '11px -apple-system, Helvetica, Arial, sans-serif';
       const meta = (state.site ? state.site + " · " : "") +
         `Relevé de toiture · ${plural(withPhoto.length, "désordre")} localisé${withPhoto.length > 1 ? "s" : ""} · ${today()}`;
-      ctx.fillText(meta, br.width / 2, hr.top - br.top + 26);
+      ctx.fillText(meta, m.W / 2, hr.top + 26);
       ctx.textAlign = "left";
       ctx.strokeStyle = RULE;
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(hr.left - br.left, hr.bottom - br.top - 0.5);
-      ctx.lineTo(hr.right - br.left, hr.bottom - br.top - 0.5);
+      ctx.moveTo(hr.left, hr.bottom - 0.5);
+      ctx.lineTo(hr.right, hr.bottom - 0.5);
       ctx.stroke();
     }
 
     // Plan
-    const pr = planEl.getBoundingClientRect();
+    const pr = m.rel(planEl);
     const planImg = await loadImg(state.planImage);
-    ctx.save();
-    roundRectPath(ctx, pr.left - br.left, pr.top - br.top, pr.width, pr.height, 0);
-    ctx.clip();
-    ctx.drawImage(planImg, pr.left - br.left, pr.top - br.top, pr.width, pr.height);
-    ctx.restore();
+    ctx.drawImage(planImg, pr.left, pr.top, pr.width, pr.height);
     ctx.strokeStyle = RULE;
     ctx.lineWidth = 1;
-    roundRectPath(ctx, pr.left - br.left, pr.top - br.top, pr.width, pr.height, 0);
-    ctx.stroke();
+    ctx.strokeRect(pr.left + 0.5, pr.top + 0.5, pr.width - 1, pr.height - 1);
 
     // Vignettes photo
     const cards = $$("[data-card]");
     for (const card of cards) {
       const pin = state.pins.find(p => p.id === card.dataset.card);
       if (!pin) continue;
-      const cr = card.getBoundingClientRect();
-      const x = cr.left - br.left, y = cr.top - br.top;
+      const cr = m.rel(card);
       ctx.fillStyle = "#ffffff";
-      roundRectPath(ctx, x, y, cr.width, cr.height, 0);
-      ctx.fill();
+      ctx.fillRect(cr.left, cr.top, cr.width, cr.height);
 
-      const imgEl = card.querySelector("img");
-      const ir = imgEl.getBoundingClientRect();
-      ctx.save();
-      roundRectPath(ctx, x + 1, y + 1, cr.width - 2, cr.height - 2, 0);
-      ctx.clip();
-      drawCover(ctx, await loadImg(pin.photos[0]), ir.left - br.left, ir.top - br.top, ir.width, ir.height);
-      ctx.restore();
+      const ir = m.rel(card.querySelector("img"));
+      drawCover(ctx, await loadImg(pin.photos[0]), ir.left, ir.top, ir.width, ir.height);
 
       const capEl = card.querySelector(".cap");
       if (capEl) {
-        const car = capEl.getBoundingClientRect();
+        const car = m.rel(capEl);
+        ctx.fillStyle = "#E4E8ED";
+        ctx.fillRect(car.left, car.top, car.width, 1);
         ctx.fillStyle = "#3E4C5A";
         ctx.font = '10px -apple-system, Helvetica, Arial, sans-serif';
         wrapText(ctx, boardCaption(pin), cr.width - 12, 2)
-          .forEach((l, i) => ctx.fillText(l, car.left - br.left + 5, car.top - br.top + 3 + i * 12));
+          .forEach((l, i) => ctx.fillText(l, car.left + 5, car.top + 4 + i * 12));
       }
       ctx.strokeStyle = RULE;
       ctx.lineWidth = 1;
-      roundRectPath(ctx, x + 0.5, y + 0.5, cr.width - 1, cr.height - 1, 0);
-      ctx.stroke();
+      ctx.strokeRect(cr.left + 0.5, cr.top + 0.5, cr.width - 1, cr.height - 1);
     }
 
     // Connecteurs
@@ -1247,7 +1288,7 @@ async function exportPNG() {
     for (const card of cards) {
       const pin = state.pins.find(p => p.id === card.dataset.card);
       if (!pin) continue;
-      const g = connectorGeometry(card.getBoundingClientRect(), pr, pin, br.left, br.top);
+      const g = connectorGeometry(m.rel(card), pr, pin);
       ctx.strokeStyle = ACCENT;
       ctx.lineWidth = 3;
       ctx.beginPath();
@@ -1269,8 +1310,8 @@ async function exportPNG() {
 
     // Points sur le plan
     for (const pin of state.pins) {
-      const dx = pr.left - br.left + (pin.x / 100) * pr.width;
-      const dy = pr.top - br.top + (pin.y / 100) * pr.height;
+      const dx = pr.left + (pin.x / 100) * pr.width;
+      const dy = pr.top + (pin.y / 100) * pr.height;
       ctx.beginPath();
       ctx.arc(dx, dy, 6.5, 0, Math.PI * 2);
       ctx.fillStyle = ACCENT;
@@ -1286,9 +1327,8 @@ async function exportPNG() {
     for (const card of cards) {
       const pin = state.pins.find(p => p.id === card.dataset.card);
       if (!pin) continue;
-      const numEl = card.querySelector(".num");
-      const nr = numEl.getBoundingClientRect();
-      const bx = nr.left - br.left + nr.width / 2, by = nr.top - br.top + nr.height / 2;
+      const nr = m.rel(card.querySelector(".num"));
+      const bx = nr.left + nr.width / 2, by = nr.top + nr.height / 2;
       ctx.beginPath();
       ctx.arc(bx, by, 10.5, 0, Math.PI * 2);
       ctx.fillStyle = ACCENT;
@@ -1368,7 +1408,7 @@ async function importJSON() {
       if (!ok) return;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
       state = loadState();
-      zoom = { s: 1, tx: 0, ty: 0 };
+      resetZoom();
       placing = null; view = "plan";
       renderAll();
       toast("Sauvegarde importée", "ok");
@@ -1419,7 +1459,9 @@ function renderAll() {
   else renderBoardView();
 }
 
-window.addEventListener("resize", () => { if (view === "board") drawLines(); else applyZoom(); });
+window.addEventListener("resize", () => {
+  if (view === "board") { fitBoard(); drawLines(); } else applyZoom();
+});
 window.addEventListener("paste", e => {
   if (view !== "plan" || state.planImage) return;
   const file = Array.from(e.clipboardData?.files || [])[0];

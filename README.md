@@ -16,9 +16,9 @@ ajouter la page à l'écran d'accueil du téléphone.
 
 | Onglet | Rôle |
 | --- | --- |
-| **Plan** | Import du plan (fichier, glisser-déposer ou collage), zoom/pince, pose et déplacement des repères. |
+| **Plan** | Import du plan (fichier, glisser-déposer ou collage), zoom/pince, pose et déplacement des repères. Le plan tient toujours dans un cadre de hauteur fixe : les actions restent atteignables sans défiler, et le doigt fait défiler la page tant que le plan n'est pas agrandi. |
 | **Repères** | Une fiche par désordre : description, photos (appareil ou galerie), repositionnement, suppression. |
-| **Planche** | Plan au centre, vignettes photo en périphérie reliées par des flèches à leur repère, export PNG haute définition. |
+| **Planche** | Plan au centre, vignettes photo en périphérie reliées par des flèches à leur repère. Aperçu ajusté à l'écran par défaut (bascule « Taille réelle »), export PNG et impression toujours en pleine résolution. Une vignette sans description n'affiche que sa photo. |
 
 Le menu `⋮` donne accès à l'impression / PDF, au remplacement du plan, à
 l'export et l'import d'une sauvegarde `.json`, au thème (auto / clair / sombre)
