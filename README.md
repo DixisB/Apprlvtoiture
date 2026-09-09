@@ -24,10 +24,18 @@ Le menu `⋮` donne accès à l'impression / PDF, au remplacement du plan, à
 l'export et l'import d'une sauvegarde `.json`, au thème (auto / clair / sombre)
 et à la réinitialisation du relevé.
 
-## Refonte
+## Parti pris graphique
 
-L'interface a été entièrement redessinée : navigation par onglets, thème clair
-et sombre, en-tête avec nom et adresse du chantier, indicateur d'occupation du
+Interface d'outil technique : **aplats uniquement**, aucun dégradé, aucune
+ombre portée, aucune animation décorative. La hiérarchie repose sur des filets
+d'un pixel, des angles à 4 px et une échelle typographique courte. La palette
+tient en trois valeurs — marine `#0E2338` pour la structure, orange `#C9531D`
+réservé aux repères et aux actions, gris neutres pour le reste — et la même
+couleur de repère est utilisée à l'écran, dans la planche exportée et dans le
+rapport imprimé.
+
+L'ergonomie a été revue en même temps : navigation par onglets, thème clair et
+sombre, en-tête avec nom et adresse du chantier, indicateur d'occupation du
 stockage, feuilles d'actions et boîtes de dialogue à la place des `alert()`,
 visionneuse photo, sauvegarde `.json` exportable, repères repositionnables et
 rapport d'impression dédié.
