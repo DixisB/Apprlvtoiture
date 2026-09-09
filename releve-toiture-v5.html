@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Relevé toiture</title>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23E8622C'/%3E%3Cpath d='M20 55 L50 28 L80 55 L72 55 L72 78 L28 78 L28 55 Z' fill='%2310233F'/%3E%3C/svg%3E">
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:#EEF2F6; color:#1B2733; }
+  .topbar { background:#10233F; padding:16px; }
+  .topbar input { background:transparent; border:none; border-bottom:1px solid transparent; color:#fff; font-size:18px; font-weight:600; width:100%; outline:none; padding:2px 0; }
+  .topbar input:focus { border-bottom-color:#6C93B0; }
+  .topbar .sub { color:#6C93B0; font-size:12px; margin-top:4px; }
+  .topbar-row { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+  .icon-btn { background:none; border:none; padding:8px; border-radius:999px; cursor:pointer; }
+  .icon-btn:active { background:rgba(255,255,255,0.1); }
+  .confirm-row { display:flex; gap:6px; }
+  .mini-btn { font-size:12px; padding:6px 10px; border-radius:6px; border:none; cursor:pointer; color:#fff; }
+  .save-error { background:#FDECD8; color:#8A4A1F; padding:8px 16px; font-size:13px; }
+  .content { padding:12px; }
+  .upload-zone { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:56px 16px; border:2px dashed #6C93B0; border-radius:10px; background:#fff; cursor:pointer; text-align:center; }
+  .upload-zone .title { font-size:14px; font-weight:600; color:#10233F; }
+  .upload-zone .hint { font-size:12px; color:#7C8896; }
+  .placing-banner { position:absolute; top:0; left:0; right:0; background:rgba(16,35,63,0.92); color:#fff; text-align:center; font-size:13px; padding:8px; }
+  .plan-viewport { position:relative; overflow:hidden; border:1px solid #6C93B0; border-radius:10px; background:#DDE4EB; touch-action:none; }
+  .plan-inner { position:relative; transform-origin:0 0; will-change:transform; }
+  .plan-inner img { width:100%; display:block; }
+  .zoom-bar { display:flex; gap:6px; align-items:center; margin-top:8px; }
+  .zoom-btn { width:38px; height:38px; border-radius:8px; border:1px solid #C3CEDA; background:#fff; color:#10233F; font-size:17px; font-weight:600; cursor:pointer; }
+  .zoom-level { font-size:12px; color:#5A6672; font-family:ui-monospace,monospace; min-width:42px; text-align:center; }
+  .zoom-hint { font-size:11px; color:#7C8896; margin-left:auto; text-align:right; }
+  .pin-marker { position:absolute; width:20px; height:20px; border-radius:999px; background:#E8622C; color:#fff; font-weight:700; font-size:10px; font-family:ui-monospace,monospace; border:1.5px solid #fff; display:flex; align-items:center; justify-content:center; transform:translate(-50%,-50%); box-shadow:0 1px 2px rgba(0,0,0,0.45); cursor:pointer; transform-origin:center; }
+  .actions-row { display:flex; gap:8px; margin-top:12px; }
+  .btn { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:12px; border-radius:8px; border:none; font-size:14px; font-weight:600; cursor:pointer; color:#fff; }
+  .btn-accent { background:#E8622C; }
+  .btn-placing { background:#6C93B0; }
+  .btn-outline { flex:none; background:#fff; color:#10233F; border:1px solid #10233F; }
+  .card { background:#fff; border:1px solid #D8E0E8; border-radius:10px; padding:12px; margin-bottom:10px; }
+  .card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .badge { width:24px; height:24px; border-radius:999px; background:#E8622C; color:#fff; font-family:ui-monospace,monospace; font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center; }
+  .card-title { display:flex; align-items:center; gap:6px; font-size:14px; font-weight:600; color:#10233F; }
+  .del-btn { background:none; border:none; color:#DC2626; cursor:pointer; padding:6px; }
+  textarea.note-input { width:100%; font-size:14px; padding:8px; border:1px solid #D8E0E8; border-radius:6px; resize:none; font-family:inherit; }
+  .print-note { display:none; font-size:14px; color:#374151; }
+  .photos-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .thumb { position:relative; width:64px; height:64px; }
+  .thumb img { width:100%; height:100%; object-fit:cover; border-radius:6px; border:1px solid #D8E0E8; }
+  .thumb .rm { position:absolute; top:-6px; right:-6px; width:20px; height:20px; border-radius:999px; background:#1B2733; color:#fff; border:none; font-size:12px; line-height:1; cursor:pointer; }
+  .add-photo { width:64px; height:64px; border:2px dashed #D8E0E8; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#9AA5B1; font-size:22px; cursor:pointer; }
+  .add-photo input { display:none; }
+  .no-print {}
+  .export-overlay { position:fixed; inset:0; background:rgba(16,35,63,0.75); z-index:99; display:flex; align-items:center; justify-content:center; padding:14px; }
+  .export-box { background:#fff; border-radius:12px; padding:14px; max-width:100%; max-height:92vh; overflow:auto; width:520px; }
+  .export-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; color:#10233F; }
+  .export-close { background:none; border:none; font-size:17px; cursor:pointer; color:#5A6672; }
+  .export-hint { font-size:12px; color:#5A6672; margin:0 0 10px 0; line-height:1.4; }
+  .export-img { width:100%; border:1px solid #D8E0E8; border-radius:6px; margin-bottom:12px; }
+  .export-box .btn { display:flex; }
+  .print-header, .print-legend { display:none; }
+  .board-screen { background:#fff; padding:10px; }
+  .board-toolbar { display:flex; gap:8px; align-items:center; margin-bottom:10px; }
+  .board-scroll { overflow:auto; -webkit-overflow-scrolling:touch; }
+  .board { position:relative; width:1400px; background:#fff; padding:10px; }
+  .board-head { text-align:center; margin-bottom:8px; }
+  .board-head h2 { margin:0; font-size:20px; color:#10233F; }
+  .board-head .meta { font-size:11px; color:#5A6672; margin-top:2px; }
+  .edge-row { display:flex; justify-content:center; align-items:flex-end; gap:8px; min-height:4px; }
+  .edge-row.bottom { align-items:flex-start; }
+  .board-mid { display:flex; align-items:center; gap:8px; margin:8px 0; }
+  .edge-col { display:flex; flex-direction:column; justify-content:center; gap:8px; width:190px; flex:none; }
+  .board-plan { flex:1; position:relative; }
+  .board-plan img { width:100%; display:block; }
+  .board-dot { position:absolute; width:14px; height:14px; border-radius:999px; background:#E8622C; border:2px solid #fff; transform:translate(-50%,-50%); box-shadow:0 0 0 1px rgba(0,0,0,0.35); }
+  .ph-card { width:170px; flex:none; border:3px solid #F2C230; background:#fff; position:relative; }
+  .ph-card img { width:100%; height:130px; object-fit:cover; display:block; }
+  .ph-card .num { position:absolute; top:-9px; left:-9px; width:22px; height:22px; border-radius:999px; background:#E8622C; color:#fff; font-size:11px; font-weight:700; font-family:ui-monospace,monospace; display:flex; align-items:center; justify-content:center; border:2px solid #fff; }
+  .ph-card .cap { font-size:9.5px; color:#334155; padding:3px 4px; line-height:1.25; max-height:24px; overflow:hidden; }
+  .board-lines { position:absolute; inset:0; pointer-events:none; z-index:5; }
+  .board-empty { padding:40px 16px; text-align:center; color:#7C8896; font-size:14px; }
+  body.board-print .board-scroll { overflow:visible; }
+  @media print {
+    body.board-print { background:#fff; }
+    body.board-print .board { width:265mm !important; padding:0; }
+    body.board-print .ph-card { width:120px; border-width:2px; }
+    body.board-print .ph-card img { height:92px; }
+    body.board-print .edge-col { width:135px; }
+    body.board-print .board-toolbar { display:none; }
+  }
+  @page { size: A4; margin: 14mm 12mm; }
+  @media print {
+    .no-print { display:none !important; }
+    .print-note { display:block !important; }
+    body { background:#fff; color:#000; }
+    .content { padding:0; }
+
+    .print-header { display:block; border-bottom:2px solid #10233F; padding-bottom:8px; margin-bottom:14px; }
+    .print-header h1 { font-size:19px; margin:0; color:#10233F; }
+    .print-header .meta { font-size:11px; color:#5A6672; margin-top:4px; }
+
+    .plan-viewport { overflow:visible; border:1px solid #94A3B0; border-radius:0; break-inside:avoid; background:#fff; }
+    .plan-inner { transform:none !important; }
+    .plan-inner img { max-height:228mm; width:100%; object-fit:contain; }
+    .pin-marker { transform:translate(-50%,-50%) !important; width:22px; height:22px; font-size:11px; }
+    .print-legend { display:block; font-size:10px; color:#5A6672; margin-top:5px; text-align:center; font-style:italic; }
+
+    .cards-zone { break-before:page; margin-top:0 !important; }
+
+    .card { border:none; border-top:1px solid #C9D3DC; border-radius:0; margin:0;
+            padding:3mm 0 2mm 0; height:65mm; overflow:hidden;
+            break-inside:avoid; page-break-inside:avoid; }
+    .card-head { margin-bottom:3px; }
+    .card-title { font-size:12.5px; }
+    .badge { width:19px; height:19px; font-size:10px; }
+    .print-note { margin:0 0 4px 0; line-height:1.35; font-size:11px; max-height:11mm; overflow:hidden; }
+
+    .photos-row { display:grid; grid-template-columns:1fr 1fr; gap:4mm; margin-top:3px; }
+    .thumb { width:100%; height:44mm; page-break-inside:avoid; }
+    .thumb img { width:100%; height:100%; object-fit:contain;
+                 background:#F4F6F8; border:1px solid #C9D3DC; border-radius:0; }
+    .card .photos-row .thumb:nth-child(n+3) { display:none; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const STORAGE_KEY = "releve-toiture-projet";
+let state = { projectName: "Relevé de toiture", planImage: null, pins: [] };
+let placing = false;
+let confirmingReset = false;
+let saveError = null;
+let saveTimer = null;
+
+try {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) state = JSON.parse(raw);
+} catch (e) {}
+
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      saveError = null;
+    } catch (e) {
+      saveError = "Stockage plein. Réduis le nombre de photos.";
+      renderAll();
+    }
+  }, 400);
+}
+
+function compressImage(file, maxWidth, quality) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxWidth / img.width);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+let zoom = { s: 1, tx: 0, ty: 0 };
+const MIN_S = 1, MAX_S = 8;
+
+function applyZoom() {
+  const inner = document.getElementById("planInner");
+  if (!inner) return;
+  const vp = document.getElementById("planViewport");
+  const vw = vp.clientWidth, vh = vp.clientHeight;
+  const cw = inner.offsetWidth * zoom.s, ch = inner.offsetHeight * zoom.s;
+  zoom.tx = cw <= vw ? (vw - cw) / 2 : Math.min(0, Math.max(vw - cw, zoom.tx));
+  zoom.ty = ch <= vh ? (vh - ch) / 2 : Math.min(0, Math.max(vh - ch, zoom.ty));
+  inner.style.transform = `translate(${zoom.tx}px, ${zoom.ty}px) scale(${zoom.s})`;
+  inner.querySelectorAll(".pin-marker").forEach(m => {
+    m.style.transform = `translate(-50%,-50%) scale(${1 / zoom.s})`;
+  });
+  const lbl = document.getElementById("zoomLevel");
+  if (lbl) lbl.textContent = Math.round(zoom.s * 100) + "%";
+}
+
+function zoomAt(newS, cx, cy) {
+  const vp = document.getElementById("planViewport");
+  if (!vp) return;
+  const r = vp.getBoundingClientRect();
+  const px = cx - r.left, py = cy - r.top;
+  const s = Math.max(MIN_S, Math.min(MAX_S, newS));
+  zoom.tx = px - ((px - zoom.tx) / zoom.s) * s;
+  zoom.ty = py - ((py - zoom.ty) / zoom.s) * s;
+  zoom.s = s;
+  applyZoom();
+}
+
+function placePinAt(clientX, clientY) {
+  const img = document.getElementById("planImg");
+  if (!img) return;
+  const r = img.getBoundingClientRect();
+  const x = ((clientX - r.left) / r.width) * 100;
+  const y = ((clientY - r.top) / r.height) * 100;
+  if (x < 0 || x > 100 || y < 0 || y > 100) return;
+  const id = String(Date.now());
+  state.pins.push({ id, number: state.pins.length + 1, x, y, note: "", photos: [] });
+  placing = false;
+  scheduleSave();
+  renderAll();
+  setTimeout(() => document.getElementById("carte-" + id)?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
+}
+
+function setupPlanInteraction(vp) {
+  const img = document.getElementById("planImg");
+  if (img && !img.complete) img.onload = applyZoom;
+  requestAnimationFrame(applyZoom);
+
+  document.getElementById("zoomIn").onclick = () => {
+    const r = vp.getBoundingClientRect();
+    zoomAt(zoom.s * 1.5, r.left + r.width / 2, r.top + r.height / 2);
+  };
+  document.getElementById("zoomOut").onclick = () => {
+    const r = vp.getBoundingClientRect();
+    zoomAt(zoom.s / 1.5, r.left + r.width / 2, r.top + r.height / 2);
+  };
+  document.getElementById("zoomReset").onclick = () => {
+    zoom = { s: 1, tx: 0, ty: 0 };
+    applyZoom();
+  };
+
+  let pts = new Map(), startDist = 0, startS = 1, startMid = null;
+  let panStart = null, moved = 0;
+
+  vp.addEventListener("pointerdown", (e) => {
+    vp.setPointerCapture(e.pointerId);
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    moved = 0;
+    if (pts.size === 1) {
+      panStart = { x: e.clientX, y: e.clientY, tx: zoom.tx, ty: zoom.ty };
+    } else if (pts.size === 2) {
+      const [a, b] = [...pts.values()];
+      startDist = Math.hypot(a.x - b.x, a.y - b.y);
+      startS = zoom.s;
+      startMid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      panStart = null;
+    }
+  });
+
+  vp.addEventListener("pointermove", (e) => {
+    if (!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pts.size === 2 && startDist) {
+      const [a, b] = [...pts.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      moved = 99;
+      zoomAt(startS * (d / startDist), startMid.x, startMid.y);
+    } else if (pts.size === 1 && panStart && zoom.s > 1) {
+      const dx = e.clientX - panStart.x, dy = e.clientY - panStart.y;
+      moved = Math.max(moved, Math.hypot(dx, dy));
+      zoom.tx = panStart.tx + dx;
+      zoom.ty = panStart.ty + dy;
+      applyZoom();
+    }
+  });
+
+  const endPointer = (e) => {
+    const wasSingle = pts.size === 1;
+    pts.delete(e.pointerId);
+    if (pts.size === 0) {
+      if (wasSingle && moved < 8) {
+        const target = e.target.closest("[data-scroll]");
+        if (target && !placing) {
+          document.getElementById("carte-" + target.dataset.scroll)
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+        } else if (placing) {
+          placePinAt(e.clientX, e.clientY);
+        }
+      }
+      panStart = null; startDist = 0;
+    }
+  };
+  vp.addEventListener("pointerup", endPointer);
+  vp.addEventListener("pointercancel", (e) => { pts.delete(e.pointerId); panStart = null; startDist = 0; });
+
+  vp.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    zoomAt(zoom.s * (e.deltaY < 0 ? 1.15 : 1 / 1.15), e.clientX, e.clientY);
+  }, { passive: false });
+}
+
+let boardMode = false;
+
+function loadImg(src) {
+  return new Promise((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = rej;
+    i.src = src;
+  });
+}
+
+function drawCover(ctx, img, x, y, w, h) {
+  const ar = img.width / img.height, dr = w / h;
+  let sw, sh, sx, sy;
+  if (ar > dr) { sh = img.height; sw = sh * dr; sx = (img.width - sw) / 2; sy = 0; }
+  else { sw = img.width; sh = sw / dr; sx = 0; sy = (img.height - sh) / 2; }
+  ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+}
+
+function wrapText(ctx, text, maxW, maxLines) {
+  const words = String(text).split(/\s+/);
+  const lines = [];
+  let cur = "";
+  for (const w of words) {
+    const t = cur ? cur + " " + w : w;
+    if (ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; if (lines.length === maxLines) break; }
+    else cur = t;
+  }
+  if (lines.length < maxLines && cur) lines.push(cur);
+  if (lines.length === maxLines && ctx.measureText(cur).width > maxW) {
+    while (lines[maxLines - 1].length > 3 && ctx.measureText(lines[maxLines - 1] + "…").width > maxW) {
+      lines[maxLines - 1] = lines[maxLines - 1].slice(0, -1);
+    }
+    lines[maxLines - 1] += "…";
+  }
+  return lines;
+}
+
+async function exportPNG() {
+  const btn = document.getElementById("boardExport");
+  const board = document.getElementById("board");
+  const planEl = document.getElementById("boardImg");
+  if (!board || !planEl) return;
+  btn.disabled = true;
+  btn.textContent = "Génération…";
+
+  try {
+    const S = 2;
+    const br = board.getBoundingClientRect();
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(br.width * S);
+    canvas.height = Math.round(br.height * S);
+    const ctx = canvas.getContext("2d");
+    ctx.scale(S, S);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, br.width, br.height);
+    ctx.textBaseline = "top";
+
+    const head = board.querySelector(".board-head");
+    if (head) {
+      const hr = head.getBoundingClientRect();
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#10233F";
+      ctx.font = "700 20px -apple-system, Helvetica, Arial, sans-serif";
+      ctx.fillText(state.projectName, br.width / 2, hr.top - br.top);
+      const nb = state.pins.filter(p => p.photos.length).length;
+      ctx.fillStyle = "#5A6672";
+      ctx.font = "11px -apple-system, Helvetica, Arial, sans-serif";
+      const d = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+      ctx.fillText(`Relevé de toiture · ${nb} désordre${nb !== 1 ? "s" : ""} localisé${nb !== 1 ? "s" : ""} · ${d}`, br.width / 2, hr.top - br.top + 26);
+      ctx.textAlign = "left";
+    }
+
+    const pr = planEl.getBoundingClientRect();
+    const planImg = await loadImg(state.planImage);
+    ctx.drawImage(planImg, pr.left - br.left, pr.top - br.top, pr.width, pr.height);
+    ctx.strokeStyle = "#94A3B0";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(pr.left - br.left, pr.top - br.top, pr.width, pr.height);
+
+    const cards = [...document.querySelectorAll("[data-card]")];
+    for (const card of cards) {
+      const pin = state.pins.find(p => p.id === card.dataset.card);
+      if (!pin) continue;
+      const cr = card.getBoundingClientRect();
+      const x = cr.left - br.left, y = cr.top - br.top;
+
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(x, y, cr.width, cr.height);
+
+      const imgEl = card.querySelector("img");
+      const ir = imgEl.getBoundingClientRect();
+      const photo = await loadImg(pin.photos[0]);
+      drawCover(ctx, photo, ir.left - br.left, ir.top - br.top, ir.width, ir.height);
+
+      const capEl = card.querySelector(".cap");
+      if (capEl) {
+        const car = capEl.getBoundingClientRect();
+        ctx.fillStyle = "#334155";
+        ctx.font = "10px -apple-system, Helvetica, Arial, sans-serif";
+        const extra = pin.photos.length > 1 ? ` (+${pin.photos.length - 1})` : "";
+        const lines = wrapText(ctx, (pin.note || "Désordre relevé") + extra, cr.width - 10, 2);
+        lines.forEach((l, i) => ctx.fillText(l, car.left - br.left + 4, car.top - br.top + 2 + i * 12));
+      }
+
+      ctx.strokeStyle = "#F2C230";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(x + 1.5, y + 1.5, cr.width - 3, cr.height - 3);
+    }
+
+    ctx.lineCap = "round";
+    for (const card of cards) {
+      const pin = state.pins.find(p => p.id === card.dataset.card);
+      if (!pin) continue;
+      const cr = card.getBoundingClientRect();
+      const tx = pr.left - br.left + (pin.x / 100) * pr.width;
+      const ty = pr.top - br.top + (pin.y / 100) * pr.height;
+      const cxMid = cr.left - br.left + cr.width / 2;
+      const cyMid = cr.top - br.top + cr.height / 2;
+      let sx, sy;
+      if (cr.bottom <= pr.top + 2) { sx = cxMid; sy = cr.bottom - br.top; }
+      else if (cr.top >= pr.bottom - 2) { sx = cxMid; sy = cr.top - br.top; }
+      else if (cr.right <= pr.left + 2) { sx = cr.right - br.left; sy = cyMid; }
+      else { sx = cr.left - br.left; sy = cyMid; }
+
+      const mx = (sx + tx) / 2, my = (sy + ty) / 2;
+      const nx = -(ty - sy), ny = tx - sx;
+      const len = Math.hypot(nx, ny) || 1;
+      const bow = Math.min(38, len * 0.12);
+      const qx = mx + (nx / len) * bow, qy = my + (ny / len) * bow;
+
+      ctx.strokeStyle = "#F2C230";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.quadraticCurveTo(qx, qy, tx, ty);
+      ctx.stroke();
+
+      const ang = Math.atan2(ty - qy, tx - qx);
+      ctx.fillStyle = "#F2C230";
+      ctx.beginPath();
+      ctx.moveTo(tx, ty);
+      ctx.lineTo(tx - 11 * Math.cos(ang - 0.4), ty - 11 * Math.sin(ang - 0.4));
+      ctx.lineTo(tx - 11 * Math.cos(ang + 0.4), ty - 11 * Math.sin(ang + 0.4));
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    for (const pin of state.pins) {
+      const dx = pr.left - br.left + (pin.x / 100) * pr.width;
+      const dy = pr.top - br.top + (pin.y / 100) * pr.height;
+      ctx.beginPath();
+      ctx.arc(dx, dy, 7, 0, Math.PI * 2);
+      ctx.fillStyle = "#E8622C";
+      ctx.fill();
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    for (const card of cards) {
+      const pin = state.pins.find(p => p.id === card.dataset.card);
+      if (!pin) continue;
+      const cr = card.getBoundingClientRect();
+      const bx = cr.left - br.left + 2, by = cr.top - br.top + 2;
+      ctx.beginPath();
+      ctx.arc(bx, by, 11, 0, Math.PI * 2);
+      ctx.fillStyle = "#E8622C";
+      ctx.fill();
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "700 12px ui-monospace, Menlo, monospace";
+      ctx.fillText(String(pin.number), bx, by + 0.5);
+    }
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+
+    const url = canvas.toDataURL("image/png");
+    showExport(url);
+  } catch (e) {
+    alert("Échec de la génération : " + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Exporter en PNG";
+  }
+}
+
+function showExport(url) {
+  const name = (state.projectName || "planche").replace(/[^\w\-]+/g, "_") + ".png";
+  const ov = document.createElement("div");
+  ov.className = "export-overlay";
+  ov.innerHTML = `
+    <div class="export-box">
+      <div class="export-head">
+        <strong>Planche générée</strong>
+        <button class="export-close">✕</button>
+      </div>
+      <p class="export-hint">Appui long sur l'image → « Ajouter aux photos », ou utilise le bouton ci-dessous.</p>
+      <img src="${url}" class="export-img">
+      <a class="btn btn-accent" href="${url}" download="${name}" style="text-decoration:none">Enregistrer le fichier</a>
+    </div>`;
+  ov.querySelector(".export-close").onclick = () => ov.remove();
+  ov.onclick = (e) => { if (e.target === ov) ov.remove(); };
+  document.body.appendChild(ov);
+}
+
+function assignEdges() {
+  const withPhoto = state.pins.filter(p => p.photos.length > 0);
+  const edges = { top: [], bottom: [], left: [], right: [] };
+  const cap = { top: 7, bottom: 7, left: 4, right: 4 };
+  withPhoto.forEach(p => {
+    const d = { top: p.y, bottom: 100 - p.y, left: p.x, right: 100 - p.x };
+    const order = Object.keys(d).sort((a, b) => d[a] - d[b]);
+    let placed = false;
+    for (const e of order) {
+      if (edges[e].length < cap[e]) { edges[e].push(p); placed = true; break; }
+    }
+    if (!placed) edges[order[0]].push(p);
+  });
+  edges.top.sort((a, b) => a.x - b.x);
+  edges.bottom.sort((a, b) => a.x - b.x);
+  edges.left.sort((a, b) => a.y - b.y);
+  edges.right.sort((a, b) => a.y - b.y);
+  return edges;
+}
+
+function photoCard(p) {
+  const extra = p.photos.length > 1 ? ` (+${p.photos.length - 1})` : "";
+  return `<div class="ph-card" data-card="${p.id}">
+    <div class="num">${p.number}</div>
+    <img src="${p.photos[0]}" alt="">
+    <div class="cap">${(p.note || "Désordre relevé")}${extra}</div>
+  </div>`;
+}
+
+function renderBoard() {
+  const edges = assignEdges();
+  const dots = state.pins.map(p =>
+    `<div class="board-dot" data-dot="${p.id}" style="left:${p.x}%;top:${p.y}%"></div>`
+  ).join("");
+  const nb = state.pins.filter(p => p.photos.length).length;
+
+  document.getElementById("app").innerHTML = `
+    <div class="board-screen">
+      <div class="board-toolbar no-print">
+        <button class="btn btn-outline" id="backBtn" style="flex:none">← Retour</button>
+        <button class="btn btn-accent" id="boardExport">Exporter en PNG</button>
+      </div>
+      <div class="board-scroll">
+        <div class="board" id="board">
+          <div class="board-head">
+            <h2>${state.projectName}</h2>
+            <div class="meta">Relevé de toiture · ${nb} désordre${nb !== 1 ? "s" : ""} localisé${nb !== 1 ? "s" : ""} · ${new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })}</div>
+          </div>
+          <div class="edge-row top" id="edgeTop">${edges.top.map(photoCard).join("")}</div>
+          <div class="board-mid">
+            <div class="edge-col" id="edgeLeft">${edges.left.map(photoCard).join("")}</div>
+            <div class="board-plan" id="boardPlan">
+              <img src="${state.planImage}" id="boardImg" alt="Plan">
+              ${dots}
+            </div>
+            <div class="edge-col" id="edgeRight">${edges.right.map(photoCard).join("")}</div>
+          </div>
+          <div class="edge-row bottom" id="edgeBottom">${edges.bottom.map(photoCard).join("")}</div>
+          <svg class="board-lines" id="boardLines"></svg>
+        </div>
+      </div>
+      ${nb === 0 ? `<div class="board-empty">Ajoute au moins une photo à un repère pour générer la planche.</div>` : ""}
+    </div>`;
+
+  document.getElementById("backBtn").onclick = () => { boardMode = false; renderAll(); };
+  document.getElementById("boardExport").onclick = exportPNG;
+
+  const img = document.getElementById("boardImg");
+  if (img && !img.complete) img.onload = drawLines;
+  requestAnimationFrame(() => requestAnimationFrame(drawLines));
+  window.onresize = () => { if (boardMode) drawLines(); };
+}
+
+function drawLines() {
+  const board = document.getElementById("board");
+  const svg = document.getElementById("boardLines");
+  const plan = document.getElementById("boardImg");
+  if (!board || !svg || !plan) return;
+
+  const br = board.getBoundingClientRect();
+  const pr = plan.getBoundingClientRect();
+  svg.setAttribute("viewBox", `0 0 ${br.width} ${br.height}`);
+  svg.setAttribute("width", br.width);
+  svg.setAttribute("height", br.height);
+
+  let paths = `<defs><marker id="ah" markerWidth="7" markerHeight="7" refX="6" refY="3.5"
+      orient="auto"><polygon points="0 0, 7 3.5, 0 7" fill="#F2C230" stroke="#8A6D00" stroke-width="0.5"/></marker></defs>`;
+
+  document.querySelectorAll("[data-card]").forEach(card => {
+    const pin = state.pins.find(p => p.id === card.dataset.card);
+    if (!pin) return;
+    const cr = card.getBoundingClientRect();
+
+    const tx = pr.left - br.left + (pin.x / 100) * pr.width;
+    const ty = pr.top - br.top + (pin.y / 100) * pr.height;
+    const cxMid = cr.left - br.left + cr.width / 2;
+    const cyMid = cr.top - br.top + cr.height / 2;
+
+    let sx, sy;
+    if (cr.bottom <= pr.top + 2) { sx = cxMid; sy = cr.bottom - br.top; }
+    else if (cr.top >= pr.bottom - 2) { sx = cxMid; sy = cr.top - br.top; }
+    else if (cr.right <= pr.left + 2) { sx = cr.right - br.left; sy = cyMid; }
+    else { sx = cr.left - br.left; sy = cyMid; }
+
+    const mx = (sx + tx) / 2, my = (sy + ty) / 2;
+    const nx = -(ty - sy), ny = tx - sx;
+    const len = Math.hypot(nx, ny) || 1;
+    const bow = Math.min(38, len * 0.12);
+    const qx = mx + (nx / len) * bow, qy = my + (ny / len) * bow;
+
+    paths += `<path d="M ${sx} ${sy} Q ${qx} ${qy} ${tx} ${ty}" fill="none"
+      stroke="#F2C230" stroke-width="4" stroke-linecap="round"
+      marker-end="url(#ah)" opacity="0.95"/>`;
+  });
+
+  svg.innerHTML = paths;
+}
+
+function renderAll() {
+  if (boardMode && state.planImage) { renderBoard(); return; }
+  const app = document.getElementById("app");
+  const pinsMarkers = state.pins.map(p =>
+    `<div class="pin-marker" style="left:${p.x}%;top:${p.y}%" data-scroll="${p.id}">${p.number}</div>`
+  ).join("");
+
+  const planSection = !state.planImage ? `
+    <label class="upload-zone no-print">
+      <div class="title">Importer le plan de toiture</div>
+      <div class="hint">Photo ou capture d'écran du plan</div>
+      <input type="file" accept="image/*" id="planInput" style="display:none">
+    </label>` : `
+    <div class="plan-viewport" id="planViewport">
+      <div class="plan-inner" id="planInner">
+        <img src="${state.planImage}" alt="Plan" id="planImg">
+        ${pinsMarkers}
+      </div>
+      ${placing ? `<div class="placing-banner">Touche le plan à l'endroit du désordre</div>` : ""}
+    </div>
+    <div class="zoom-bar no-print">
+      <button class="zoom-btn" id="zoomOut">−</button>
+      <span class="zoom-level" id="zoomLevel">100%</span>
+      <button class="zoom-btn" id="zoomIn">+</button>
+      <button class="zoom-btn" id="zoomReset" style="font-size:14px">↺</button>
+      <span class="zoom-hint">Pince pour zoomer<br>1 doigt pour déplacer</span>
+    </div>
+    <div class="actions-row no-print">
+      <button class="btn ${placing ? "btn-placing" : "btn-accent"}" id="placeBtn">${placing ? "Annuler" : "+ Ajouter un repère"}</button>
+      <button class="btn btn-outline" id="boardBtn">Planche</button>
+    </div>`;
+
+  const cards = state.pins.map(p => `
+    <div class="card" id="carte-${p.id}">
+      <div class="card-head">
+        <div class="card-title"><span class="badge">${p.number}</span> Repère ${p.number}</div>
+        <button class="del-btn no-print" data-del="${p.id}">✕</button>
+      </div>
+      <textarea class="note-input no-print" rows="2" placeholder="Description du désordre…" data-note="${p.id}">${p.note}</textarea>
+      <p class="print-note">${p.note || "—"}</p>
+      <div class="photos-row">
+        ${p.photos.map((ph, idx) => `
+          <div class="thumb">
+            <img src="${ph}">
+            <button class="rm no-print" data-rmphoto="${p.id}" data-idx="${idx}">✕</button>
+          </div>`).join("")}
+        <label class="add-photo no-print">📷
+          <input type="file" accept="image/*" capture="environment" multiple data-photoinput="${p.id}">
+        </label>
+      </div>
+    </div>`).join("");
+
+  app.innerHTML = `
+    <div class="topbar no-print">
+      <div class="topbar-row">
+        <div style="flex:1;min-width:0;">
+          <input id="nameInput" value="${state.projectName}">
+          <div class="sub">${state.pins.length} repère${state.pins.length !== 1 ? "s" : ""} · sauvegardé sur cet appareil</div>
+        </div>
+        ${!confirmingReset ? `<button class="icon-btn" id="resetBtn">↺</button>` : `
+          <div class="confirm-row">
+            <button class="mini-btn" style="background:#E8622C" id="confirmYes">Confirmer</button>
+            <button class="mini-btn" style="background:rgba(255,255,255,0.15)" id="confirmNo">Annuler</button>
+          </div>`}
+      </div>
+    </div>
+    ${saveError ? `<div class="save-error no-print">${saveError}</div>` : ""}
+    <div class="content">
+      <div class="print-header">
+        <h1>${state.projectName}</h1>
+        <div class="meta">Rapport photo · ${state.pins.length} repère${state.pins.length !== 1 ? "s" : ""} · ${new Date().toLocaleDateString("fr-FR", { day:"2-digit", month:"long", year:"numeric" })}</div>
+      </div>
+      ${planSection}
+      ${state.planImage ? `<div class="print-legend">Plan de toiture — localisation des désordres relevés</div>` : ""}
+      <div class="cards-zone" style="margin-top:14px;">${cards}</div>
+    </div>`;
+
+  attachListeners();
+}
+
+function attachListeners() {
+  const nameInput = document.getElementById("nameInput");
+  if (nameInput) nameInput.oninput = (e) => { state.projectName = e.target.value; scheduleSave(); };
+
+  const resetBtn = document.getElementById("resetBtn");
+  if (resetBtn) resetBtn.onclick = () => { confirmingReset = true; renderAll(); };
+  const confirmYes = document.getElementById("confirmYes");
+  if (confirmYes) confirmYes.onclick = () => {
+    state = { projectName: "Relevé de toiture", planImage: null, pins: [] };
+    confirmingReset = false;
+    scheduleSave();
+    renderAll();
+  };
+  const confirmNo = document.getElementById("confirmNo");
+  if (confirmNo) confirmNo.onclick = () => { confirmingReset = false; renderAll(); };
+
+  const planInput = document.getElementById("planInput");
+  if (planInput) planInput.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    state.planImage = await compressImage(file, 1200, 0.7);
+    scheduleSave();
+    renderAll();
+  };
+
+  const viewport = document.getElementById("planViewport");
+  if (viewport) setupPlanInteraction(viewport);
+
+  const placeBtn = document.getElementById("placeBtn");
+  if (placeBtn) placeBtn.onclick = () => { placing = !placing; renderAll(); };
+
+  const boardBtn = document.getElementById("boardBtn");
+  if (boardBtn) boardBtn.onclick = () => { boardMode = true; renderAll(); };
+
+  document.querySelectorAll("[data-del]").forEach(btn => {
+    btn.onclick = () => {
+      state.pins = state.pins.filter(p => p.id !== btn.dataset.del).map((p, i) => ({ ...p, number: i + 1 }));
+      scheduleSave();
+      renderAll();
+    };
+  });
+
+  document.querySelectorAll("[data-note]").forEach(ta => {
+    ta.oninput = () => {
+      const pin = state.pins.find(p => p.id === ta.dataset.note);
+      if (pin) { pin.note = ta.value; scheduleSave(); }
+    };
+  });
+
+  document.querySelectorAll("[data-photoinput]").forEach(input => {
+    input.onchange = async (e) => {
+      const files = Array.from(e.target.files || []);
+      if (!files.length) return;
+      const compressed = await Promise.all(files.map(f => compressImage(f, 700, 0.55)));
+      const pin = state.pins.find(p => p.id === input.dataset.photoinput);
+      if (pin) { pin.photos.push(...compressed); scheduleSave(); renderAll(); }
+    };
+  });
+
+  document.querySelectorAll("[data-rmphoto]").forEach(btn => {
+    btn.onclick = () => {
+      const pin = state.pins.find(p => p.id === btn.dataset.rmphoto);
+      if (pin) { pin.photos.splice(Number(btn.dataset.idx), 1); scheduleSave(); renderAll(); }
+    };
+  });
+}
+
+renderAll();
+</script>
+</body>
+</html>
