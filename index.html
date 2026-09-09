@@ -1,199 +1,737 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-theme="auto">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0B1A2F">
+<meta name="description" content="Relevé de toiture : plan annoté, repères photo et planche de synthèse, hors ligne.">
 <title>Relevé toiture</title>
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23E8622C'/%3E%3Cpath d='M20 55 L50 28 L80 55 L72 55 L72 78 L28 78 L28 55 Z' fill='%2310233F'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230B1A2F'/%3E%3Cpath d='M18 54 L50 26 L82 54 L73 54 L73 79 L27 79 L27 54 Z' fill='%23E8622C'/%3E%3Ccircle cx='50' cy='62' r='7' fill='%23F2C230'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230B1A2F'/%3E%3Cpath d='M18 54 L50 26 L82 54 L73 54 L73 79 L27 79 L27 54 Z' fill='%23E8622C'/%3E%3Ccircle cx='50' cy='62' r='7' fill='%23F2C230'/%3E%3C/svg%3E">
 <style>
-  * { box-sizing: border-box; }
-  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:#EEF2F6; color:#1B2733; }
-  .topbar { background:#10233F; padding:16px; }
-  .topbar input { background:transparent; border:none; border-bottom:1px solid transparent; color:#fff; font-size:18px; font-weight:600; width:100%; outline:none; padding:2px 0; }
-  .topbar input:focus { border-bottom-color:#6C93B0; }
-  .topbar .sub { color:#6C93B0; font-size:12px; margin-top:4px; }
-  .topbar-row { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
-  .icon-btn { background:none; border:none; padding:8px; border-radius:999px; cursor:pointer; }
-  .icon-btn:active { background:rgba(255,255,255,0.1); }
-  .confirm-row { display:flex; gap:6px; }
-  .mini-btn { font-size:12px; padding:6px 10px; border-radius:6px; border:none; cursor:pointer; color:#fff; }
-  .save-error { background:#FDECD8; color:#8A4A1F; padding:8px 16px; font-size:13px; }
-  .content { padding:12px; }
-  .upload-zone { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:56px 16px; border:2px dashed #6C93B0; border-radius:10px; background:#fff; cursor:pointer; text-align:center; }
-  .upload-zone .title { font-size:14px; font-weight:600; color:#10233F; }
-  .upload-zone .hint { font-size:12px; color:#7C8896; }
-  .placing-banner { position:absolute; top:0; left:0; right:0; background:rgba(16,35,63,0.92); color:#fff; text-align:center; font-size:13px; padding:8px; }
-  .plan-viewport { position:relative; overflow:hidden; border:1px solid #6C93B0; border-radius:10px; background:#DDE4EB; touch-action:none; }
-  .plan-inner { position:relative; transform-origin:0 0; will-change:transform; }
-  .plan-inner img { width:100%; display:block; }
-  .zoom-bar { display:flex; gap:6px; align-items:center; margin-top:8px; }
-  .zoom-btn { width:38px; height:38px; border-radius:8px; border:1px solid #C3CEDA; background:#fff; color:#10233F; font-size:17px; font-weight:600; cursor:pointer; }
-  .zoom-level { font-size:12px; color:#5A6672; font-family:ui-monospace,monospace; min-width:42px; text-align:center; }
-  .zoom-hint { font-size:11px; color:#7C8896; margin-left:auto; text-align:right; }
-  .pin-marker { position:absolute; width:20px; height:20px; border-radius:999px; background:#E8622C; color:#fff; font-weight:700; font-size:10px; font-family:ui-monospace,monospace; border:1.5px solid #fff; display:flex; align-items:center; justify-content:center; transform:translate(-50%,-50%); box-shadow:0 1px 2px rgba(0,0,0,0.45); cursor:pointer; transform-origin:center; }
-  .actions-row { display:flex; gap:8px; margin-top:12px; }
-  .btn { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:12px; border-radius:8px; border:none; font-size:14px; font-weight:600; cursor:pointer; color:#fff; }
-  .btn-accent { background:#E8622C; }
-  .btn-placing { background:#6C93B0; }
-  .btn-outline { flex:none; background:#fff; color:#10233F; border:1px solid #10233F; }
-  .card { background:#fff; border:1px solid #D8E0E8; border-radius:10px; padding:12px; margin-bottom:10px; }
-  .card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
-  .badge { width:24px; height:24px; border-radius:999px; background:#E8622C; color:#fff; font-family:ui-monospace,monospace; font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center; }
-  .card-title { display:flex; align-items:center; gap:6px; font-size:14px; font-weight:600; color:#10233F; }
-  .del-btn { background:none; border:none; color:#DC2626; cursor:pointer; padding:6px; }
-  textarea.note-input { width:100%; font-size:14px; padding:8px; border:1px solid #D8E0E8; border-radius:6px; resize:none; font-family:inherit; }
-  .print-note { display:none; font-size:14px; color:#374151; }
-  .photos-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
-  .thumb { position:relative; width:64px; height:64px; }
-  .thumb img { width:100%; height:100%; object-fit:cover; border-radius:6px; border:1px solid #D8E0E8; }
-  .thumb .rm { position:absolute; top:-6px; right:-6px; width:20px; height:20px; border-radius:999px; background:#1B2733; color:#fff; border:none; font-size:12px; line-height:1; cursor:pointer; }
-  .add-photo { width:64px; height:64px; border:2px dashed #D8E0E8; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#9AA5B1; font-size:22px; cursor:pointer; }
-  .add-photo input { display:none; }
-  .no-print {}
-  .export-overlay { position:fixed; inset:0; background:rgba(16,35,63,0.75); z-index:99; display:flex; align-items:center; justify-content:center; padding:14px; }
-  .export-box { background:#fff; border-radius:12px; padding:14px; max-width:100%; max-height:92vh; overflow:auto; width:520px; }
-  .export-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; color:#10233F; }
-  .export-close { background:none; border:none; font-size:17px; cursor:pointer; color:#5A6672; }
-  .export-hint { font-size:12px; color:#5A6672; margin:0 0 10px 0; line-height:1.4; }
-  .export-img { width:100%; border:1px solid #D8E0E8; border-radius:6px; margin-bottom:12px; }
-  .export-box .btn { display:flex; }
-  .print-header, .print-legend { display:none; }
-  .board-screen { background:#fff; padding:10px; }
-  .board-toolbar { display:flex; gap:8px; align-items:center; margin-bottom:10px; }
-  .board-scroll { overflow:auto; -webkit-overflow-scrolling:touch; }
-  .board { position:relative; width:1400px; background:#fff; padding:10px; }
-  .board-head { text-align:center; margin-bottom:8px; }
-  .board-head h2 { margin:0; font-size:20px; color:#10233F; }
-  .board-head .meta { font-size:11px; color:#5A6672; margin-top:2px; }
-  .edge-row { display:flex; justify-content:center; align-items:flex-end; gap:8px; min-height:4px; }
-  .edge-row.bottom { align-items:flex-start; }
-  .board-mid { display:flex; align-items:center; gap:8px; margin:8px 0; }
-  .edge-col { display:flex; flex-direction:column; justify-content:center; gap:8px; width:190px; flex:none; }
-  .board-plan { flex:1; position:relative; }
-  .board-plan img { width:100%; display:block; }
-  .board-dot { position:absolute; width:14px; height:14px; border-radius:999px; background:#E8622C; border:2px solid #fff; transform:translate(-50%,-50%); box-shadow:0 0 0 1px rgba(0,0,0,0.35); }
-  .ph-card { width:170px; flex:none; border:3px solid #F2C230; background:#fff; position:relative; }
-  .ph-card img { width:100%; height:130px; object-fit:cover; display:block; }
-  .ph-card .num { position:absolute; top:-9px; left:-9px; width:22px; height:22px; border-radius:999px; background:#E8622C; color:#fff; font-size:11px; font-weight:700; font-family:ui-monospace,monospace; display:flex; align-items:center; justify-content:center; border:2px solid #fff; }
-  .ph-card .cap { font-size:9.5px; color:#334155; padding:3px 4px; line-height:1.25; max-height:24px; overflow:hidden; }
-  .board-lines { position:absolute; inset:0; pointer-events:none; z-index:5; }
-  .board-empty { padding:40px 16px; text-align:center; color:#7C8896; font-size:14px; }
-  body.board-print .board-scroll { overflow:visible; }
-  @media print {
-    body.board-print { background:#fff; }
-    body.board-print .board { width:265mm !important; padding:0; }
-    body.board-print .ph-card { width:120px; border-width:2px; }
-    body.board-print .ph-card img { height:92px; }
-    body.board-print .edge-col { width:135px; }
-    body.board-print .board-toolbar { display:none; }
+/* ============================================================
+   Design tokens
+   ============================================================ */
+:root{
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --navy-900:#0B1A2F;
+  --navy-800:#10233F;
+  --navy-600:#22405F;
+  --accent:#E8622C;
+  --accent-600:#CE5322;
+  --accent-soft:rgba(232,98,44,.12);
+  --gold:#F2C230;
+  --danger:#DC2626;
+  --danger-soft:rgba(220,38,38,.1);
+  --ok:#15803D;
+
+  --bg:#F1F4F8;
+  --surface:#FFFFFF;
+  --surface-2:#F7F9FC;
+  --border:#E1E8F0;
+  --border-strong:#CBD6E2;
+  --text:#0F1B2D;
+  --text-2:#43536A;
+  --muted:#7A889B;
+  --header-bg:linear-gradient(160deg,#12294A 0%,#0B1A2F 100%);
+  --header-text:#FFFFFF;
+  --header-muted:#8FA9C4;
+  --scrim:rgba(9,18,32,.55);
+
+  --r-lg:16px; --r-md:12px; --r-sm:9px;
+  --sh-1:0 1px 2px rgba(15,27,45,.05), 0 1px 3px rgba(15,27,45,.07);
+  --sh-2:0 4px 16px rgba(15,27,45,.10);
+  --sh-3:0 18px 44px rgba(9,18,32,.28);
+  --safe-b:env(safe-area-inset-bottom, 0px);
+  --safe-t:env(safe-area-inset-top, 0px);
+  --tap:44px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0A121C;
+    --surface:#131F2D;
+    --surface-2:#0F1B27;
+    --border:#233346;
+    --border-strong:#31465F;
+    --text:#E9F0F8;
+    --text-2:#AFC0D3;
+    --muted:#7F92A8;
+    --header-bg:linear-gradient(160deg,#16293F 0%,#0A121C 100%);
+    --header-muted:#8AA2BC;
+    --accent-soft:rgba(232,98,44,.18);
+    --danger-soft:rgba(220,38,38,.16);
+    --scrim:rgba(3,8,15,.7);
+    --sh-1:0 1px 2px rgba(0,0,0,.3);
+    --sh-2:0 6px 20px rgba(0,0,0,.35);
   }
-  @page { size: A4; margin: 14mm 12mm; }
-  @media print {
-    .no-print { display:none !important; }
-    .print-note { display:block !important; }
-    body { background:#fff; color:#000; }
-    .content { padding:0; }
+}
+:root[data-theme="dark"]{
+  --bg:#0A121C;
+  --surface:#131F2D;
+  --surface-2:#0F1B27;
+  --border:#233346;
+  --border-strong:#31465F;
+  --text:#E9F0F8;
+  --text-2:#AFC0D3;
+  --muted:#7F92A8;
+  --header-bg:linear-gradient(160deg,#16293F 0%,#0A121C 100%);
+  --header-muted:#8AA2BC;
+  --accent-soft:rgba(232,98,44,.18);
+  --danger-soft:rgba(220,38,38,.16);
+  --scrim:rgba(3,8,15,.7);
+  --sh-1:0 1px 2px rgba(0,0,0,.3);
+  --sh-2:0 6px 20px rgba(0,0,0,.35);
+}
 
-    .print-header { display:block; border-bottom:2px solid #10233F; padding-bottom:8px; margin-bottom:14px; }
-    .print-header h1 { font-size:19px; margin:0; color:#10233F; }
-    .print-header .meta { font-size:11px; color:#5A6672; margin-top:4px; }
+/* ============================================================
+   Base
+   ============================================================ */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  margin:0; font-family:var(--font); background:var(--bg); color:var(--text);
+  font-size:15px; line-height:1.45; -webkit-font-smoothing:antialiased;
+  overscroll-behavior-y:none;
+}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+h1,h2,h3,p{margin:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
-    .plan-viewport { overflow:visible; border:1px solid #94A3B0; border-radius:0; break-inside:avoid; background:#fff; }
-    .plan-inner { transform:none !important; }
-    .plan-inner img { max-height:228mm; width:100%; object-fit:contain; }
-    .pin-marker { transform:translate(-50%,-50%) !important; width:22px; height:22px; font-size:11px; }
-    .print-legend { display:block; font-size:10px; color:#5A6672; margin-top:5px; text-align:center; font-style:italic; }
+.app{min-height:100%;display:flex;flex-direction:column}
 
-    .cards-zone { break-before:page; margin-top:0 !important; }
+/* ============================================================
+   Header
+   ============================================================ */
+.hdr{
+  background:var(--header-bg); color:var(--header-text);
+  padding:calc(12px + var(--safe-t)) 14px 12px; position:sticky; top:0; z-index:30;
+}
+.hdr-row{display:flex;align-items:center;gap:10px}
+.brand{
+  width:36px;height:36px;border-radius:10px;flex:none;
+  background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;
+}
+.hdr-main{flex:1;min-width:0}
+.name-input{
+  background:transparent;border:none;border-bottom:1.5px solid transparent;
+  color:var(--header-text);font-size:17px;font-weight:650;width:100%;padding:1px 0;outline:none;
+  letter-spacing:-.01em;
+}
+.name-input:focus{border-bottom-color:var(--accent)}
+.site-input{
+  background:transparent;border:none;border-bottom:1px solid transparent;
+  color:var(--header-muted);font-size:12.5px;width:100%;padding:2px 0 1px;outline:none;margin-top:1px;
+}
+.site-input::placeholder{color:rgba(143,169,196,.65)}
+.site-input:focus{border-bottom-color:rgba(255,255,255,.25)}
+.hdr-btn{
+  width:var(--tap);height:var(--tap);flex:none;border:none;border-radius:12px;
+  background:rgba(255,255,255,.08);color:#fff;display:flex;align-items:center;justify-content:center;
+}
+.hdr-btn:active{background:rgba(255,255,255,.18)}
+.hdr-meta{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  margin-top:10px;font-size:11.5px;color:var(--header-muted);
+}
+.chip{
+  display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;
+  background:rgba(255,255,255,.07);font-variant-numeric:tabular-nums;
+}
+.chip b{color:#fff;font-weight:650}
+.chip.warn{background:rgba(242,194,48,.2);color:#F7DC94}
 
-    .card { border:none; border-top:1px solid #C9D3DC; border-radius:0; margin:0;
-            padding:3mm 0 2mm 0; height:65mm; overflow:hidden;
-            break-inside:avoid; page-break-inside:avoid; }
-    .card-head { margin-bottom:3px; }
-    .card-title { font-size:12.5px; }
-    .badge { width:19px; height:19px; font-size:10px; }
-    .print-note { margin:0 0 4px 0; line-height:1.35; font-size:11px; max-height:11mm; overflow:hidden; }
+/* Tabs */
+.tabs{
+  position:sticky;top:0;z-index:25;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;padding:6px;gap:4px;box-shadow:var(--sh-1);
+}
+.tab{
+  flex:1;border:none;background:transparent;color:var(--muted);font-size:13.5px;font-weight:600;
+  padding:9px 6px;border-radius:9px;display:flex;align-items:center;justify-content:center;gap:6px;
+  transition:background .15s,color .15s;
+}
+.tab[aria-selected="true"]{background:var(--accent-soft);color:var(--accent)}
+.tab .count{
+  font-family:var(--mono);font-size:11px;background:var(--surface-2);color:var(--text-2);
+  padding:1px 6px;border-radius:999px;border:1px solid var(--border);
+}
+.tab[aria-selected="true"] .count{background:var(--accent);color:#fff;border-color:transparent}
 
-    .photos-row { display:grid; grid-template-columns:1fr 1fr; gap:4mm; margin-top:3px; }
-    .thumb { width:100%; height:44mm; page-break-inside:avoid; }
-    .thumb img { width:100%; height:100%; object-fit:contain;
-                 background:#F4F6F8; border:1px solid #C9D3DC; border-radius:0; }
-    .card .photos-row .thumb:nth-child(n+3) { display:none; }
+main{flex:1;padding:14px 14px calc(28px + var(--safe-b));max-width:900px;width:100%;margin:0 auto}
+
+/* ============================================================
+   Generic components
+   ============================================================ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:var(--tap);
+  padding:11px 15px;border-radius:var(--r-md);border:1px solid transparent;
+  font-size:14.5px;font-weight:620;background:var(--surface);color:var(--text);
+  border-color:var(--border-strong);box-shadow:var(--sh-1);
+}
+.btn:active{transform:translateY(1px)}
+.btn[disabled]{opacity:.55;pointer-events:none}
+.btn-primary{background:var(--accent);color:#fff;border-color:transparent}
+.btn-primary:active{background:var(--accent-600)}
+.btn-dark{background:var(--navy-800);color:#fff;border-color:transparent}
+.btn-danger{color:var(--danger);border-color:var(--border-strong);background:var(--surface)}
+.btn-ghost{background:transparent;border-color:transparent;box-shadow:none;color:var(--text-2)}
+.btn-block{width:100%}
+.btn-sm{min-height:36px;padding:7px 12px;font-size:13px;border-radius:var(--r-sm)}
+
+.card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+  box-shadow:var(--sh-1);overflow:hidden;
+}
+.section-title{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin:2px 2px 10px;font-size:12px;font-weight:700;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--muted);
+}
+.empty{
+  text-align:center;padding:38px 20px;color:var(--muted);
+}
+.empty .ico{opacity:.65;margin-bottom:10px}
+.empty h3{font-size:15px;color:var(--text);margin-bottom:4px}
+.empty p{font-size:13px;max-width:34ch;margin:0 auto 14px}
+
+/* ============================================================
+   Plan view
+   ============================================================ */
+.drop{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  padding:52px 20px;border:2px dashed var(--border-strong);border-radius:var(--r-lg);
+  background:var(--surface);text-align:center;color:var(--muted);
+}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop h3{font-size:15.5px;color:var(--text)}
+.drop p{font-size:13px;max-width:32ch}
+.drop .btn{margin-top:8px}
+
+.plan-wrap{position:relative;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border);background:var(--surface);box-shadow:var(--sh-1)}
+.plan-vp{
+  position:relative;overflow:hidden;background:
+    repeating-conic-gradient(var(--surface-2) 0% 25%, var(--surface) 0% 50%) 0 0/18px 18px;
+  touch-action:none;min-height:180px;
+}
+.plan-vp.placing{cursor:crosshair}
+.plan-inner{position:relative;transform-origin:0 0;will-change:transform}
+.plan-inner img{width:100%;display:block;pointer-events:none;user-select:none}
+
+.pin{
+  position:absolute;width:26px;height:26px;border-radius:999px;background:var(--accent);
+  color:#fff;font-family:var(--mono);font-weight:700;font-size:11.5px;
+  border:2px solid #fff;display:flex;align-items:center;justify-content:center;
+  transform:translate(-50%,-50%);transform-origin:center;
+  box-shadow:0 2px 6px rgba(0,0,0,.4);
+}
+.pin.no-photo{background:var(--navy-600)}
+.pin.active{animation:pop .9s ease-out 2}
+@keyframes pop{0%{box-shadow:0 0 0 0 rgba(232,98,44,.6)}100%{box-shadow:0 0 0 14px rgba(232,98,44,0)}}
+
+.plan-bar{
+  position:absolute;top:10px;right:10px;display:flex;align-items:center;gap:2px;
+  background:var(--surface);border:1px solid var(--border);border-radius:999px;
+  padding:3px;box-shadow:var(--sh-2);
+}
+.zbtn{width:34px;height:34px;border:none;background:transparent;border-radius:999px;color:var(--text);font-size:17px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.zbtn:active{background:var(--surface-2)}
+.zlevel{font-family:var(--mono);font-size:11px;color:var(--muted);min-width:40px;text-align:center}
+
+.banner{
+  position:absolute;left:10px;right:10px;top:10px;z-index:6;
+  background:var(--navy-900);color:#fff;border-radius:var(--r-md);padding:10px 12px;
+  font-size:13px;display:flex;align-items:center;gap:9px;box-shadow:var(--sh-2);
+}
+.banner .dot{width:8px;height:8px;border-radius:999px;background:var(--accent);flex:none;animation:blink 1.2s infinite}
+@keyframes blink{50%{opacity:.25}}
+
+.plan-actions{display:flex;gap:9px;margin-top:12px;flex-wrap:wrap}
+.plan-actions .btn{flex:1;min-width:150px}
+.hint{font-size:12px;color:var(--muted);margin-top:9px;display:flex;gap:6px;align-items:flex-start}
+
+/* ============================================================
+   Pin cards
+   ============================================================ */
+.pin-card{margin-bottom:12px}
+.pin-card.flash{animation:flash 1.4s ease-out}
+@keyframes flash{0%{box-shadow:0 0 0 3px var(--accent)}100%{box-shadow:var(--sh-1)}}
+.pc-head{display:flex;align-items:center;gap:10px;padding:11px 12px;border-bottom:1px solid var(--border);background:var(--surface-2)}
+.badge{
+  width:26px;height:26px;flex:none;border-radius:999px;background:var(--accent);color:#fff;
+  font-family:var(--mono);font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;
+}
+.pc-title{flex:1;min-width:0;font-size:14.5px;font-weight:620}
+.pc-title span{display:block;font-size:11.5px;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums}
+.icon-btn{
+  width:36px;height:36px;flex:none;border:none;background:transparent;border-radius:9px;
+  color:var(--muted);display:flex;align-items:center;justify-content:center;
+}
+.icon-btn:active{background:var(--surface-2)}
+.icon-btn.danger{color:var(--danger)}
+.pc-body{padding:12px}
+.note{
+  width:100%;font-size:14.5px;padding:10px 11px;border:1px solid var(--border);border-radius:var(--r-sm);
+  background:var(--surface-2);resize:none;font-family:inherit;line-height:1.4;min-height:44px;outline:none;
+}
+.note:focus{border-color:var(--accent);background:var(--surface)}
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px;margin-top:10px}
+.thumb{position:relative;aspect-ratio:1;border-radius:var(--r-sm);overflow:hidden;border:1px solid var(--border);background:var(--surface-2)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .rm{
+  position:absolute;top:3px;right:3px;width:24px;height:24px;border-radius:999px;border:none;
+  background:rgba(11,26,47,.78);color:#fff;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center;
+}
+.add-photo{
+  aspect-ratio:1;border:2px dashed var(--border-strong);border-radius:var(--r-sm);background:transparent;
+  color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10.5px;font-weight:600;
+}
+.add-photo:active{border-color:var(--accent);color:var(--accent)}
+
+/* ============================================================
+   Board (planche)
+   ============================================================ */
+.board-tools{display:flex;gap:9px;margin-bottom:12px;flex-wrap:wrap}
+.board-tools .btn{flex:1;min-width:150px}
+.board-scroll{overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--border);border-radius:var(--r-lg);background:#fff;box-shadow:var(--sh-1)}
+.board{position:relative;width:1360px;background:#fff;padding:18px;color:#0F1B2D}
+.board-head{text-align:center;margin-bottom:12px}
+.board-head h2{font-size:21px;color:var(--navy-800);letter-spacing:-.01em}
+.board-head .meta{font-size:11.5px;color:#64748B;margin-top:3px}
+.edge-row{display:flex;justify-content:center;align-items:flex-end;gap:10px;min-height:2px}
+.edge-row.bottom{align-items:flex-start}
+.board-mid{display:flex;align-items:center;gap:10px;margin:10px 0}
+.edge-col{display:flex;flex-direction:column;justify-content:center;gap:10px;width:186px;flex:none}
+.board-plan{flex:1;position:relative}
+.board-plan img{width:100%;display:block;border-radius:6px}
+.board-dot{position:absolute;width:15px;height:15px;border-radius:999px;background:var(--accent);border:2px solid #fff;transform:translate(-50%,-50%);box-shadow:0 0 0 1px rgba(0,0,0,.3)}
+.ph-card{width:172px;flex:none;border:2.5px solid var(--gold);border-radius:8px;background:#fff;position:relative;overflow:hidden}
+.ph-card img{width:100%;height:128px;object-fit:cover;display:block}
+.ph-card .num{
+  position:absolute;top:5px;left:5px;width:22px;height:22px;border-radius:999px;background:var(--accent);
+  color:#fff;font-size:11px;font-weight:700;font-family:var(--mono);
+  display:flex;align-items:center;justify-content:center;border:2px solid #fff;
+}
+.ph-card .cap{font-size:9.5px;color:#334155;padding:4px 5px;line-height:1.28;height:26px;overflow:hidden}
+.board-lines{position:absolute;inset:0;pointer-events:none;z-index:5}
+
+/* ============================================================
+   Overlays: sheet, dialog, lightbox, toast
+   ============================================================ */
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:60;display:flex;animation:fade .18s ease-out}
+@keyframes fade{from{opacity:0}}
+.scrim.center{align-items:center;justify-content:center;padding:18px}
+.scrim.bottom{align-items:flex-end;justify-content:center}
+
+.sheet{
+  width:100%;max-width:460px;background:var(--surface);border-radius:18px 18px 0 0;
+  padding:8px 8px calc(10px + var(--safe-b));box-shadow:var(--sh-3);animation:up .22s cubic-bezier(.2,.8,.3,1);
+}
+@keyframes up{from{transform:translateY(22px)}}
+.sheet .grip{width:38px;height:4px;border-radius:999px;background:var(--border-strong);margin:6px auto 10px}
+.sheet-item{
+  display:flex;align-items:center;gap:12px;width:100%;border:none;background:transparent;
+  padding:13px 12px;border-radius:var(--r-md);font-size:15px;text-align:left;color:var(--text);
+}
+.sheet-item:active{background:var(--surface-2)}
+.sheet-item .ico{width:22px;flex:none;display:flex;justify-content:center;color:var(--muted)}
+.sheet-item small{display:block;font-size:12px;color:var(--muted);font-weight:400}
+.sheet-item.danger,.sheet-item.danger .ico{color:var(--danger)}
+.sheet-sep{height:1px;background:var(--border);margin:6px 12px}
+
+.dialog{
+  width:100%;max-width:400px;background:var(--surface);border-radius:var(--r-lg);
+  padding:20px;box-shadow:var(--sh-3);animation:up .2s cubic-bezier(.2,.8,.3,1);
+}
+.dialog h3{font-size:17px;margin-bottom:7px}
+.dialog p{font-size:14px;color:var(--text-2);line-height:1.5}
+.dialog-actions{display:flex;gap:9px;margin-top:18px}
+.dialog-actions .btn{flex:1}
+
+.lightbox{position:fixed;inset:0;background:rgba(6,12,20,.94);z-index:70;display:flex;flex-direction:column}
+.lightbox img{flex:1;min-height:0;object-fit:contain;width:100%;padding:14px}
+.lightbox .lb-bar{display:flex;justify-content:space-between;align-items:center;padding:calc(10px + var(--safe-t)) 14px 10px;color:#fff;font-size:13.5px}
+.lightbox .lb-bar button{background:rgba(255,255,255,.12);border:none;color:#fff;border-radius:10px;width:38px;height:38px}
+
+.toast-host{position:fixed;left:0;right:0;bottom:calc(16px + var(--safe-b));z-index:80;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;padding:0 14px}
+.toast{
+  background:var(--navy-900);color:#fff;border-radius:999px;padding:10px 16px;font-size:13.5px;
+  box-shadow:var(--sh-3);max-width:100%;animation:up .2s ease-out;
+}
+.toast.err{background:var(--danger)}
+.toast.ok{background:var(--ok)}
+
+.export-box{width:100%;max-width:560px;max-height:92vh;overflow:auto;background:var(--surface);border-radius:var(--r-lg);padding:16px;box-shadow:var(--sh-3)}
+.export-box h3{font-size:16px;margin-bottom:4px}
+.export-box p{font-size:12.5px;color:var(--muted);margin-bottom:12px;line-height:1.45}
+.export-box img{width:100%;border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:12px;background:#fff}
+
+/* ============================================================
+   Print report
+   ============================================================ */
+.print-root{display:none}
+@page{size:A4;margin:14mm 12mm}
+@media print{
+  body{background:#fff;color:#000}
+  body.printing .app,body.printing .toast-host,body.printing .scrim{display:none !important}
+  body.printing .print-root{display:block}
+  .print-root{font-family:var(--font);color:#111}
+  .pr-head{border-bottom:2px solid #10233F;padding-bottom:8px;margin-bottom:14px}
+  .pr-head h1{font-size:19px;color:#10233F}
+  .pr-head .meta{font-size:11px;color:#5A6672;margin-top:4px}
+  .pr-plan{position:relative;border:1px solid #94A3B0;break-inside:avoid}
+  .pr-plan img{width:100%;max-height:210mm;object-fit:contain;display:block}
+  .pr-dot{
+    position:absolute;width:6mm;height:6mm;border-radius:999px;background:#E8622C;color:#fff;border:1px solid #fff;
+    transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;
+    font-family:var(--mono);font-size:9px;font-weight:700;
   }
+  .pr-legend{font-size:10px;color:#5A6672;margin-top:5px;text-align:center;font-style:italic}
+  .pr-pins{break-before:page}
+  .pr-pin{break-inside:avoid;page-break-inside:avoid;border-top:1px solid #C9D3DC;padding:3mm 0 4mm}
+  .pr-pin-head{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:#10233F}
+  .pr-pin-head .n{width:5mm;height:5mm;border-radius:999px;background:#E8622C;color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;font-family:var(--mono)}
+  .pr-note{font-size:11px;color:#374151;margin:1.5mm 0 2mm;line-height:1.35}
+  .pr-photos{display:grid;grid-template-columns:1fr 1fr;gap:3mm}
+  .pr-photos img{width:100%;height:42mm;object-fit:contain;background:#F4F6F8;border:1px solid #C9D3DC}
+  .pr-more{font-size:9.5px;color:#5A6672;margin-top:1.5mm}
+}
 </style>
 </head>
 <body>
-<div id="app"></div>
+<div id="app" class="app">
+  <header class="hdr" id="hdr"></header>
+  <nav class="tabs" id="tabs" role="tablist"></nav>
+  <main id="view"></main>
+</div>
+<div class="print-root" id="printRoot" aria-hidden="true"></div>
+<div class="toast-host" id="toastHost"></div>
+<noscript><p style="padding:20px">Cette application nécessite JavaScript.</p></noscript>
+
 <script>
+"use strict";
+/* ============================================================
+   Relevé de toiture — application hors ligne, sans dépendance.
+   Données conservées dans localStorage (clé historique conservée,
+   compatible avec la version d'origine sauvegardée dans legacy/).
+   ============================================================ */
+
 const STORAGE_KEY = "releve-toiture-projet";
-let state = { projectName: "Relevé de toiture", planImage: null, pins: [] };
-let placing = false;
-let confirmingReset = false;
+const THEME_KEY = "releve-toiture-theme";
+const PLAN_MAX_W = 1400, PLAN_Q = 0.72;
+const PHOTO_MAX_W = 900, PHOTO_Q = 0.6;
+const STORAGE_BUDGET = 4.6 * 1024 * 1024; // ~5 Mo de quota localStorage
+
+/* ---------- Icônes (SVG inline) ---------- */
+const ICONS = {
+  house:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E8622C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><circle cx="12" cy="14" r="2" fill="#F2C230" stroke="none"/></svg>',
+  more:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  map:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>',
+  pinIco:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>',
+  grid:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
+  plus:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  trash:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>',
+  move:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/></svg>',
+  camera:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.4"/></svg>',
+  image:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 16l-5-5-6 6-3-3-4 4"/></svg>',
+  print:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 15h12v6H6z"/></svg>',
+  down:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13M7 12l5 5 5-5M4 21h16"/></svg>',
+  up:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V4M7 9l5-5 5 5M4 21h16"/></svg>',
+  reset:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.7L3 8"/><path d="M3 3v5h5"/></svg>',
+  theme:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M19.1 4.9l-1.5 1.5M6.4 17.6l-1.5 1.5"/></svg>',
+  close:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  upload:'<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M4 15v3a2 2 0 002 2h12a2 2 0 002-2v-3"/></svg>',
+  info:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.6v.4"/></svg>'
+};
+
+/* ---------- Helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const plural = (n, w, s = "s") => `${n} ${w}${n > 1 ? s : ""}`;
+const today = () => new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+
+/* ---------- State ---------- */
+function blankState() {
+  return { projectName: "Relevé de toiture", site: "", planImage: null, pins: [] };
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return blankState();
+    const p = JSON.parse(raw);
+    const s = Object.assign(blankState(), p);
+    s.pins = Array.isArray(p.pins) ? p.pins : [];
+    s.pins = s.pins.map((pin, i) => ({
+      id: String(pin.id ?? Date.now() + i),
+      number: i + 1,
+      x: Number(pin.x) || 0,
+      y: Number(pin.y) || 0,
+      note: typeof pin.note === "string" ? pin.note : "",
+      photos: Array.isArray(pin.photos) ? pin.photos : []
+    }));
+    return s;
+  } catch (e) {
+    return blankState();
+  }
+}
+
+let state = loadState();
+let view = "plan";                 // plan | pins | board
+let placing = null;                // null | {mode:"new"} | {mode:"move", id}
+let focusPinId = null;             // repère à mettre en évidence dans la liste
 let saveError = null;
 let saveTimer = null;
 
-try {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (raw) state = JSON.parse(raw);
-} catch (e) {}
-
-function scheduleSave() {
+function save() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      saveError = null;
+      if (saveError) { saveError = null; renderHeader(); }
     } catch (e) {
-      saveError = "Stockage plein. Réduis le nombre de photos.";
-      renderAll();
+      saveError = "Stockage plein — exporte une sauvegarde puis allège les photos.";
+      toast(saveError, "err", 5000);
+      renderHeader();
     }
-  }, 400);
+  }, 350);
+}
+function storageBytes() {
+  try { return new Blob([JSON.stringify(state)]).size; } catch (e) { return 0; }
+}
+const fmtSize = b => b > 1048576 ? (b / 1048576).toFixed(1) + " Mo" : Math.round(b / 1024) + " Ko";
+
+/* ---------- Thème ---------- */
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem(THEME_KEY, t); } catch (e) {}
+}
+applyTheme((() => { try { return localStorage.getItem(THEME_KEY) || "auto"; } catch (e) { return "auto"; } })());
+
+/* ---------- Overlays ---------- */
+function toast(msg, kind = "", ms = 2600) {
+  const host = $("#toastHost");
+  const el = document.createElement("div");
+  el.className = "toast " + kind;
+  el.textContent = msg;
+  host.appendChild(el);
+  setTimeout(() => el.remove(), ms);
+}
+function overlay(html, cls = "center") {
+  const ov = document.createElement("div");
+  ov.className = "scrim " + cls;
+  ov.innerHTML = html;
+  ov.addEventListener("click", e => { if (e.target === ov) ov.remove(); });
+  document.body.appendChild(ov);
+  return ov;
+}
+function confirmDialog({ title, message, confirmLabel = "Confirmer", danger = false }) {
+  return new Promise(resolve => {
+    const ov = overlay(`<div class="dialog" role="dialog" aria-modal="true">
+      <h3>${esc(title)}</h3><p>${esc(message)}</p>
+      <div class="dialog-actions">
+        <button class="btn" data-no>Annuler</button>
+        <button class="btn ${danger ? "btn-primary" : "btn-dark"}" data-yes
+          ${danger ? 'style="background:var(--danger)"' : ""}>${esc(confirmLabel)}</button>
+      </div></div>`);
+    const done = v => { ov.remove(); resolve(v); };
+    $("[data-no]", ov).onclick = () => done(false);
+    $("[data-yes]", ov).onclick = () => done(true);
+    ov.addEventListener("click", e => { if (e.target === ov) resolve(false); });
+  });
+}
+function sheet(items) {
+  const ov = overlay(`<div class="sheet" role="menu"><div class="grip"></div>${
+    items.map((it, i) => it.sep
+      ? `<div class="sheet-sep"></div>`
+      : `<button class="sheet-item ${it.danger ? "danger" : ""}" data-i="${i}">
+           <span class="ico">${it.icon || ""}</span>
+           <span>${esc(it.label)}${it.sub ? `<small>${esc(it.sub)}</small>` : ""}</span>
+         </button>`).join("")
+  }</div>`, "bottom");
+  $$("[data-i]", ov).forEach(btn => {
+    btn.onclick = () => { ov.remove(); items[Number(btn.dataset.i)].action?.(); };
+  });
+  return ov;
+}
+function lightbox(src, caption) {
+  const ov = document.createElement("div");
+  ov.className = "lightbox";
+  ov.innerHTML = `<div class="lb-bar"><span>${esc(caption || "")}</span>
+      <button aria-label="Fermer">${ICONS.close}</button></div>
+    <img src="${src}" alt="">`;
+  ov.querySelector("button").onclick = () => ov.remove();
+  ov.onclick = e => { if (e.target === ov || e.target.tagName === "IMG") ov.remove(); };
+  document.body.appendChild(ov);
 }
 
+/* ---------- Images ---------- */
 function compressImage(file, maxWidth, quality) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = e => {
       const img = new Image();
       img.onload = () => {
         const scale = Math.min(1, maxWidth / img.width);
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
-        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL("image/jpeg", quality));
+        const c = document.createElement("canvas");
+        c.width = Math.max(1, Math.round(img.width * scale));
+        c.height = Math.max(1, Math.round(img.height * scale));
+        const ctx = c.getContext("2d");
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, c.width, c.height);
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL("image/jpeg", quality));
       };
-      img.onerror = reject;
+      img.onerror = () => reject(new Error("Image illisible"));
       img.src = e.target.result;
     };
-    reader.onerror = reject;
+    reader.onerror = () => reject(new Error("Lecture impossible"));
     reader.readAsDataURL(file);
   });
 }
+function pickFiles({ multiple = false, camera = false } = {}) {
+  return new Promise(resolve => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    if (multiple) input.multiple = true;
+    if (camera) input.capture = "environment";
+    input.style.display = "none";
+    document.body.appendChild(input);
+    input.onchange = () => { resolve(Array.from(input.files || [])); input.remove(); };
+    input.click();
+  });
+}
+async function setPlanFromFile(file) {
+  if (!file || !file.type.startsWith("image/")) return;
+  try {
+    state.planImage = await compressImage(file, PLAN_MAX_W, PLAN_Q);
+    zoom = { s: 1, tx: 0, ty: 0 };
+    save(); renderAll();
+    toast("Plan importé", "ok");
+  } catch (e) { toast("Import du plan impossible", "err"); }
+}
+async function addPhotos(pinId, camera) {
+  const files = await pickFiles({ multiple: !camera, camera });
+  if (!files.length) return;
+  try {
+    const imgs = await Promise.all(files.map(f => compressImage(f, PHOTO_MAX_W, PHOTO_Q)));
+    const pin = state.pins.find(p => p.id === pinId);
+    if (!pin) return;
+    pin.photos.push(...imgs);
+    save(); renderAll();
+    toast(plural(imgs.length, "photo") + " ajoutée" + (imgs.length > 1 ? "s" : ""), "ok");
+  } catch (e) { toast("Ajout de photo impossible", "err"); }
+}
 
+/* ============================================================
+   Header + onglets
+   ============================================================ */
+function renderHeader() {
+  const photos = state.pins.reduce((n, p) => n + p.photos.length, 0);
+  const bytes = storageBytes();
+  const full = bytes > STORAGE_BUDGET * 0.8;
+  $("#hdr").innerHTML = `
+    <div class="hdr-row">
+      <div class="brand">${ICONS.house}</div>
+      <div class="hdr-main">
+        <input class="name-input" id="nameInput" value="${esc(state.projectName)}"
+               placeholder="Nom du chantier" aria-label="Nom du projet">
+        <input class="site-input" id="siteInput" value="${esc(state.site)}"
+               placeholder="Adresse / référence (optionnel)" aria-label="Adresse du chantier">
+      </div>
+      <button class="hdr-btn" id="menuBtn" aria-label="Menu">${ICONS.more}</button>
+    </div>
+    <div class="hdr-meta">
+      <span class="chip"><b>${state.pins.length}</b> repère${state.pins.length > 1 ? "s" : ""}</span>
+      <span class="chip"><b>${photos}</b> photo${photos > 1 ? "s" : ""}</span>
+      <span class="chip ${full ? "warn" : ""}">${full ? "⚠ " : ""}${fmtSize(bytes)} sur cet appareil</span>
+    </div>
+    ${saveError ? `<div class="chip warn" style="margin-top:8px">${esc(saveError)}</div>` : ""}`;
+
+  $("#nameInput").oninput = e => { state.projectName = e.target.value; save(); };
+  $("#siteInput").oninput = e => { state.site = e.target.value; save(); };
+  $("#menuBtn").onclick = openMenu;
+}
+
+function renderTabs() {
+  const tabs = [
+    { id: "plan", label: "Plan", icon: ICONS.map },
+    { id: "pins", label: "Repères", icon: ICONS.pinIco, count: state.pins.length },
+    { id: "board", label: "Planche", icon: ICONS.grid }
+  ];
+  $("#tabs").innerHTML = tabs.map(t => `
+    <button class="tab" role="tab" aria-selected="${view === t.id}" data-tab="${t.id}">
+      ${t.icon}<span>${t.label}</span>
+      ${t.count ? `<span class="count">${t.count}</span>` : ""}
+    </button>`).join("");
+  $$("[data-tab]").forEach(b => b.onclick = () => setView(b.dataset.tab));
+}
+
+function setView(v) {
+  if (view === v) return;
+  view = v;
+  if (v !== "plan") placing = null;
+  renderAll();
+  window.scrollTo({ top: 0 });
+}
+
+function openMenu() {
+  const themeNames = { auto: "Automatique", light: "Clair", dark: "Sombre" };
+  const cur = document.documentElement.dataset.theme || "auto";
+  sheet([
+    { label: "Imprimer / PDF", sub: "Rapport A4 : plan + fiches repères", icon: ICONS.print, action: printReport },
+    { label: state.planImage ? "Remplacer le plan" : "Importer un plan", icon: ICONS.image,
+      action: async () => { const f = await pickFiles(); if (f[0]) setPlanFromFile(f[0]); } },
+    { sep: true },
+    { label: "Exporter la sauvegarde", sub: "Fichier .json à conserver", icon: ICONS.down, action: exportJSON },
+    { label: "Importer une sauvegarde", sub: "Remplace le relevé en cours", icon: ICONS.up, action: importJSON },
+    { sep: true },
+    { label: "Thème : " + themeNames[cur], icon: ICONS.theme,
+      action: () => { applyTheme(cur === "auto" ? "light" : cur === "light" ? "dark" : "auto"); renderAll(); } },
+    { label: "Nouveau relevé", sub: "Efface le plan, les repères et les photos",
+      icon: ICONS.trash, danger: true, action: resetProject }
+  ]);
+}
+
+async function resetProject() {
+  const ok = await confirmDialog({
+    title: "Nouveau relevé ?",
+    message: "Le plan, les " + plural(state.pins.length, "repère") + " et toutes les photos seront définitivement effacés de cet appareil.",
+    confirmLabel: "Tout effacer", danger: true
+  });
+  if (!ok) return;
+  state = blankState();
+  zoom = { s: 1, tx: 0, ty: 0 };
+  placing = null; view = "plan";
+  save(); renderAll();
+  toast("Relevé réinitialisé");
+}
+
+/* ============================================================
+   Vue Plan — zoom / déplacement / pose de repères
+   ============================================================ */
 let zoom = { s: 1, tx: 0, ty: 0 };
 const MIN_S = 1, MAX_S = 8;
 
 function applyZoom() {
-  const inner = document.getElementById("planInner");
-  if (!inner) return;
-  const vp = document.getElementById("planViewport");
+  const inner = $("#planInner"), vp = $("#planVp");
+  if (!inner || !vp) return;
   const vw = vp.clientWidth, vh = vp.clientHeight;
   const cw = inner.offsetWidth * zoom.s, ch = inner.offsetHeight * zoom.s;
   zoom.tx = cw <= vw ? (vw - cw) / 2 : Math.min(0, Math.max(vw - cw, zoom.tx));
   zoom.ty = ch <= vh ? (vh - ch) / 2 : Math.min(0, Math.max(vh - ch, zoom.ty));
   inner.style.transform = `translate(${zoom.tx}px, ${zoom.ty}px) scale(${zoom.s})`;
-  inner.querySelectorAll(".pin-marker").forEach(m => {
-    m.style.transform = `translate(-50%,-50%) scale(${1 / zoom.s})`;
-  });
-  const lbl = document.getElementById("zoomLevel");
+  $$(".pin", inner).forEach(m => { m.style.transform = `translate(-50%,-50%) scale(${1 / zoom.s})`; });
+  const lbl = $("#zLevel");
   if (lbl) lbl.textContent = Math.round(zoom.s * 100) + "%";
 }
-
 function zoomAt(newS, cx, cy) {
-  const vp = document.getElementById("planViewport");
+  const vp = $("#planVp");
   if (!vp) return;
   const r = vp.getBoundingClientRect();
   const px = cx - r.left, py = cy - r.top;
@@ -204,43 +742,50 @@ function zoomAt(newS, cx, cy) {
   applyZoom();
 }
 
-function placePinAt(clientX, clientY) {
-  const img = document.getElementById("planImg");
-  if (!img) return;
+function planCoords(clientX, clientY) {
+  const img = $("#planImg");
+  if (!img) return null;
   const r = img.getBoundingClientRect();
   const x = ((clientX - r.left) / r.width) * 100;
   const y = ((clientY - r.top) / r.height) * 100;
-  if (x < 0 || x > 100 || y < 0 || y > 100) return;
+  if (x < 0 || x > 100 || y < 0 || y > 100) return null;
+  return { x, y };
+}
+function handlePlanTap(clientX, clientY) {
+  const c = planCoords(clientX, clientY);
+  if (!c) return;
+  if (placing.mode === "move") {
+    const pin = state.pins.find(p => p.id === placing.id);
+    if (pin) { pin.x = c.x; pin.y = c.y; }
+    placing = null;
+    save(); renderAll();
+    toast("Repère déplacé", "ok");
+    return;
+  }
   const id = String(Date.now());
-  state.pins.push({ id, number: state.pins.length + 1, x, y, note: "", photos: [] });
-  placing = false;
-  scheduleSave();
+  state.pins.push({ id, number: state.pins.length + 1, x: c.x, y: c.y, note: "", photos: [] });
+  placing = null;
+  focusPinId = id;
+  save();
+  view = "pins";
   renderAll();
-  setTimeout(() => document.getElementById("carte-" + id)?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
+  toast("Repère " + state.pins.length + " créé — ajoute une photo");
 }
 
 function setupPlanInteraction(vp) {
-  const img = document.getElementById("planImg");
+  const img = $("#planImg");
   if (img && !img.complete) img.onload = applyZoom;
   requestAnimationFrame(applyZoom);
 
-  document.getElementById("zoomIn").onclick = () => {
-    const r = vp.getBoundingClientRect();
-    zoomAt(zoom.s * 1.5, r.left + r.width / 2, r.top + r.height / 2);
-  };
-  document.getElementById("zoomOut").onclick = () => {
-    const r = vp.getBoundingClientRect();
-    zoomAt(zoom.s / 1.5, r.left + r.width / 2, r.top + r.height / 2);
-  };
-  document.getElementById("zoomReset").onclick = () => {
-    zoom = { s: 1, tx: 0, ty: 0 };
-    applyZoom();
-  };
+  $("#zIn").onclick = () => { const r = vp.getBoundingClientRect(); zoomAt(zoom.s * 1.5, r.left + r.width / 2, r.top + r.height / 2); };
+  $("#zOut").onclick = () => { const r = vp.getBoundingClientRect(); zoomAt(zoom.s / 1.5, r.left + r.width / 2, r.top + r.height / 2); };
+  $("#zReset").onclick = () => { zoom = { s: 1, tx: 0, ty: 0 }; applyZoom(); };
 
-  let pts = new Map(), startDist = 0, startS = 1, startMid = null;
-  let panStart = null, moved = 0;
+  const pts = new Map();
+  let startDist = 0, startS = 1, startMid = null, panStart = null, moved = 0;
 
-  vp.addEventListener("pointerdown", (e) => {
+  vp.addEventListener("pointerdown", e => {
+    if (e.target.closest(".plan-bar")) return; // laisser les boutons de zoom recevoir le clic
     vp.setPointerCapture(e.pointerId);
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     moved = 0;
@@ -254,15 +799,13 @@ function setupPlanInteraction(vp) {
       panStart = null;
     }
   });
-
-  vp.addEventListener("pointermove", (e) => {
+  vp.addEventListener("pointermove", e => {
     if (!pts.has(e.pointerId)) return;
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pts.size === 2 && startDist) {
       const [a, b] = [...pts.values()];
-      const d = Math.hypot(a.x - b.x, a.y - b.y);
       moved = 99;
-      zoomAt(startS * (d / startDist), startMid.x, startMid.y);
+      zoomAt(startS * (Math.hypot(a.x - b.x, a.y - b.y) / startDist), startMid.x, startMid.y);
     } else if (pts.size === 1 && panStart && zoom.s > 1) {
       const dx = e.clientX - panStart.x, dy = e.clientY - panStart.y;
       moved = Math.max(moved, Math.hypot(dx, dy));
@@ -271,43 +814,332 @@ function setupPlanInteraction(vp) {
       applyZoom();
     }
   });
-
-  const endPointer = (e) => {
+  const end = e => {
     const wasSingle = pts.size === 1;
     pts.delete(e.pointerId);
-    if (pts.size === 0) {
-      if (wasSingle && moved < 8) {
-        const target = e.target.closest("[data-scroll]");
-        if (target && !placing) {
-          document.getElementById("carte-" + target.dataset.scroll)
-            ?.scrollIntoView({ behavior: "smooth", block: "center" });
-        } else if (placing) {
-          placePinAt(e.clientX, e.clientY);
-        }
+    if (pts.size) return;
+    if (wasSingle && moved < 8) {
+      if (placing) {
+        handlePlanTap(e.clientX, e.clientY);
+      } else {
+        // le viewport capture le pointeur : on retrouve le repère par ses coordonnées
+        const marker = document.elementFromPoint(e.clientX, e.clientY)?.closest("[data-pin]");
+        if (marker) openPin(marker.dataset.pin);
       }
-      panStart = null; startDist = 0;
     }
+    panStart = null; startDist = 0;
   };
-  vp.addEventListener("pointerup", endPointer);
-  vp.addEventListener("pointercancel", (e) => { pts.delete(e.pointerId); panStart = null; startDist = 0; });
-
-  vp.addEventListener("wheel", (e) => {
+  vp.addEventListener("pointerup", end);
+  vp.addEventListener("pointercancel", e => { pts.delete(e.pointerId); panStart = null; startDist = 0; });
+  vp.addEventListener("wheel", e => {
     e.preventDefault();
     zoomAt(zoom.s * (e.deltaY < 0 ? 1.15 : 1 / 1.15), e.clientX, e.clientY);
   }, { passive: false });
 }
 
-let boardMode = false;
+function openPin(id) {
+  focusPinId = id;
+  view = "pins";
+  renderAll();
+}
+
+function renderPlanView() {
+  const main = $("#view");
+  if (!state.planImage) {
+    main.innerHTML = `
+      <div class="drop" id="drop">
+        <span class="ico">${ICONS.upload}</span>
+        <h3>Importer le plan de toiture</h3>
+        <p>Photo, scan ou capture d'écran du plan. Glisse le fichier ici, colle-le, ou choisis-le.</p>
+        <button class="btn btn-primary" id="pickPlan">${ICONS.image} Choisir un fichier</button>
+      </div>
+      <p class="hint">${ICONS.info} Tout reste sur cet appareil : aucune donnée n'est envoyée sur Internet.</p>`;
+    const drop = $("#drop");
+    $("#pickPlan").onclick = async () => { const f = await pickFiles(); if (f[0]) setPlanFromFile(f[0]); };
+    drop.onclick = e => { if (e.target.closest("button")) return; $("#pickPlan").click(); };
+    ["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+    ["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+    drop.addEventListener("drop", e => { const f = e.dataTransfer?.files?.[0]; if (f) setPlanFromFile(f); });
+    return;
+  }
+
+  const markers = state.pins.map(p => `
+    <div class="pin ${p.photos.length ? "" : "no-photo"} ${p.id === focusPinId ? "active" : ""}"
+         style="left:${p.x}%;top:${p.y}%" data-pin="${p.id}"
+         title="Repère ${p.number}">${p.number}</div>`).join("");
+
+  main.innerHTML = `
+    <div class="plan-wrap">
+      <div class="plan-vp ${placing ? "placing" : ""}" id="planVp">
+        <div class="plan-inner" id="planInner">
+          <img src="${state.planImage}" alt="Plan de toiture" id="planImg">
+          ${markers}
+        </div>
+        ${placing ? `<div class="banner"><span class="dot"></span>
+            ${placing.mode === "move"
+              ? "Touche le plan pour déplacer le repère"
+              : "Touche le plan à l'endroit du désordre"}</div>` : ""}
+        <div class="plan-bar">
+          <button class="zbtn" id="zOut" aria-label="Dézoomer">−</button>
+          <span class="zlevel" id="zLevel">100%</span>
+          <button class="zbtn" id="zIn" aria-label="Zoomer">+</button>
+          <button class="zbtn" id="zReset" aria-label="Réinitialiser le zoom" style="font-size:13px">↺</button>
+        </div>
+      </div>
+    </div>
+    <div class="plan-actions">
+      <button class="btn ${placing ? "" : "btn-primary"}" id="placeBtn">
+        ${placing ? ICONS.close + " Annuler" : ICONS.plus + " Ajouter un repère"}</button>
+      <button class="btn" id="toBoard">${ICONS.grid} Voir la planche</button>
+    </div>
+    <p class="hint">${ICONS.info} Pince pour zoomer · un doigt pour déplacer · touche un repère pour ouvrir sa fiche.</p>`;
+
+  setupPlanInteraction($("#planVp"));
+  $("#placeBtn").onclick = () => { placing = placing ? null : { mode: "new" }; renderAll(); };
+  $("#toBoard").onclick = () => setView("board");
+  if (focusPinId) setTimeout(() => { focusPinId = null; }, 2000);
+}
+
+/* ============================================================
+   Vue Repères
+   ============================================================ */
+function renderPinsView() {
+  const main = $("#view");
+  if (!state.pins.length) {
+    main.innerHTML = `
+      <div class="card empty">
+        <div class="ico">${ICONS.pinIco}</div>
+        <h3>Aucun repère</h3>
+        <p>Place un repère sur le plan à chaque désordre constaté, puis ajoute-lui des photos et une description.</p>
+        <button class="btn btn-primary" id="startPlace">${ICONS.plus} Ajouter un repère</button>
+      </div>`;
+    $("#startPlace").onclick = startPlacing;
+    return;
+  }
+
+  main.innerHTML = `
+    <div class="section-title">
+      <span>${plural(state.pins.length, "repère")}</span>
+      <button class="btn btn-sm btn-primary" id="startPlace">${ICONS.plus} Nouveau</button>
+    </div>
+    ${state.pins.map(p => `
+      <div class="card pin-card ${p.id === focusPinId ? "flash" : ""}" id="pin-${p.id}">
+        <div class="pc-head">
+          <span class="badge">${p.number}</span>
+          <div class="pc-title">Repère ${p.number}
+            <span>${plural(p.photos.length, "photo")} · ${Math.round(p.x)} % / ${Math.round(p.y)} %</span>
+          </div>
+          <button class="icon-btn" data-move="${p.id}" aria-label="Repositionner">${ICONS.move}</button>
+          <button class="icon-btn danger" data-del="${p.id}" aria-label="Supprimer">${ICONS.trash}</button>
+        </div>
+        <div class="pc-body">
+          <textarea class="note" rows="2" placeholder="Description du désordre…" data-note="${p.id}">${esc(p.note)}</textarea>
+          <div class="photos">
+            ${p.photos.map((ph, i) => `
+              <div class="thumb">
+                <img src="${ph}" alt="Photo ${i + 1} du repère ${p.number}" data-view="${p.id}" data-idx="${i}">
+                <button class="rm" data-rm="${p.id}" data-idx="${i}" aria-label="Retirer la photo">${ICONS.close}</button>
+              </div>`).join("")}
+            <button class="add-photo" data-add="${p.id}">${ICONS.camera}<span>Photo</span></button>
+          </div>
+        </div>
+      </div>`).join("")}`;
+
+  $("#startPlace").onclick = startPlacing;
+
+  $$("[data-note]").forEach(ta => {
+    const grow = () => { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; };
+    grow();
+    ta.oninput = () => {
+      grow();
+      const pin = state.pins.find(p => p.id === ta.dataset.note);
+      if (pin) { pin.note = ta.value; save(); }
+    };
+  });
+  $$("[data-add]").forEach(b => b.onclick = () => choosePhotoSource(b.dataset.add));
+  $$("[data-view]").forEach(img => img.onclick = () => {
+    const pin = state.pins.find(p => p.id === img.dataset.view);
+    lightbox(img.src, pin ? `Repère ${pin.number}${pin.note ? " — " + pin.note : ""}` : "");
+  });
+  $$("[data-rm]").forEach(b => b.onclick = async () => {
+    const pin = state.pins.find(p => p.id === b.dataset.rm);
+    if (!pin) return;
+    if (!await confirmDialog({ title: "Retirer la photo ?", message: "Cette photo sera supprimée du repère " + pin.number + ".", confirmLabel: "Retirer", danger: true })) return;
+    pin.photos.splice(Number(b.dataset.idx), 1);
+    save(); renderAll();
+  });
+  $$("[data-move]").forEach(b => b.onclick = () => {
+    if (!state.planImage) { toast("Importe d'abord un plan", "err"); return; }
+    placing = { mode: "move", id: b.dataset.move };
+    view = "plan";
+    renderAll();
+  });
+  $$("[data-del]").forEach(b => b.onclick = async () => {
+    const pin = state.pins.find(p => p.id === b.dataset.del);
+    if (!pin) return;
+    if (!await confirmDialog({
+      title: "Supprimer le repère " + pin.number + " ?",
+      message: "La description et " + plural(pin.photos.length, "photo") + " seront supprimées. Les repères suivants seront renumérotés.",
+      confirmLabel: "Supprimer", danger: true
+    })) return;
+    state.pins = state.pins.filter(p => p.id !== pin.id).map((p, i) => ({ ...p, number: i + 1 }));
+    save(); renderAll();
+    toast("Repère supprimé");
+  });
+
+  if (focusPinId) {
+    const el = $("#pin-" + CSS.escape(focusPinId));
+    if (el) setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "center" }), 60);
+    setTimeout(() => { focusPinId = null; }, 1600);
+  }
+}
+
+function startPlacing() {
+  if (!state.planImage) {
+    toast("Importe d'abord un plan de toiture", "err");
+    setView("plan");
+    return;
+  }
+  placing = { mode: "new" };
+  view = "plan";
+  renderAll();
+}
+
+function choosePhotoSource(pinId) {
+  sheet([
+    { label: "Prendre une photo", icon: ICONS.camera, action: () => addPhotos(pinId, true) },
+    { label: "Choisir dans la galerie", sub: "Sélection multiple possible", icon: ICONS.image, action: () => addPhotos(pinId, false) }
+  ]);
+}
+
+/* ============================================================
+   Vue Planche (board) + export PNG
+   ============================================================ */
+function assignEdges() {
+  const withPhoto = state.pins.filter(p => p.photos.length > 0);
+  const edges = { top: [], bottom: [], left: [], right: [] };
+  const cap = { top: 7, bottom: 7, left: 4, right: 4 };
+  withPhoto.forEach(p => {
+    const d = { top: p.y, bottom: 100 - p.y, left: p.x, right: 100 - p.x };
+    const order = Object.keys(d).sort((a, b) => d[a] - d[b]);
+    const target = order.find(e => edges[e].length < cap[e]) || order[0];
+    edges[target].push(p);
+  });
+  edges.top.sort((a, b) => a.x - b.x);
+  edges.bottom.sort((a, b) => a.x - b.x);
+  edges.left.sort((a, b) => a.y - b.y);
+  edges.right.sort((a, b) => a.y - b.y);
+  return edges;
+}
+const boardCaption = p => (p.note || "Désordre relevé") + (p.photos.length > 1 ? ` (+${p.photos.length - 1})` : "");
+function photoCard(p) {
+  return `<div class="ph-card" data-card="${p.id}">
+    <img src="${p.photos[0]}" alt="">
+    <div class="num">${p.number}</div>
+    <div class="cap">${esc(boardCaption(p))}</div>
+  </div>`;
+}
+
+function renderBoardView() {
+  const main = $("#view");
+  if (!state.planImage) {
+    main.innerHTML = `<div class="card empty"><div class="ico">${ICONS.map}</div>
+      <h3>Pas encore de plan</h3><p>Importe le plan de toiture pour composer la planche de synthèse.</p>
+      <button class="btn btn-primary" id="goPlan">${ICONS.image} Importer le plan</button></div>`;
+    $("#goPlan").onclick = () => setView("plan");
+    return;
+  }
+  const withPhoto = state.pins.filter(p => p.photos.length);
+  if (!withPhoto.length) {
+    main.innerHTML = `<div class="card empty"><div class="ico">${ICONS.camera}</div>
+      <h3>Aucune photo à afficher</h3>
+      <p>La planche associe chaque photo à sa position sur le plan. Ajoute au moins une photo à un repère.</p>
+      <button class="btn btn-primary" id="goPins">${ICONS.pinIco} Voir les repères</button></div>`;
+    $("#goPins").onclick = () => setView("pins");
+    return;
+  }
+
+  const edges = assignEdges();
+  const dots = state.pins.map(p => `<div class="board-dot" style="left:${p.x}%;top:${p.y}%"></div>`).join("");
+
+  main.innerHTML = `
+    <div class="board-tools">
+      <button class="btn btn-primary" id="exportPng">${ICONS.down} Exporter en PNG</button>
+      <button class="btn" id="printBtn">${ICONS.print} Imprimer / PDF</button>
+    </div>
+    <div class="board-scroll">
+      <div class="board" id="board">
+        <div class="board-head">
+          <h2>${esc(state.projectName)}</h2>
+          <div class="meta">${state.site ? esc(state.site) + " · " : ""}Relevé de toiture · ${
+            plural(withPhoto.length, "désordre")} localisé${withPhoto.length > 1 ? "s" : ""} · ${today()}</div>
+        </div>
+        <div class="edge-row top">${edges.top.map(photoCard).join("")}</div>
+        <div class="board-mid">
+          <div class="edge-col">${edges.left.map(photoCard).join("")}</div>
+          <div class="board-plan"><img src="${state.planImage}" id="boardImg" alt="Plan">${dots}</div>
+          <div class="edge-col">${edges.right.map(photoCard).join("")}</div>
+        </div>
+        <div class="edge-row bottom">${edges.bottom.map(photoCard).join("")}</div>
+        <svg class="board-lines" id="boardLines"></svg>
+      </div>
+    </div>
+    <p class="hint">${ICONS.info} Fais défiler horizontalement pour voir toute la planche. L'export PNG conserve la mise en page complète.</p>`;
+
+  $("#exportPng").onclick = exportPNG;
+  $("#printBtn").onclick = printReport;
+
+  const img = $("#boardImg");
+  if (img && !img.complete) img.onload = drawLines;
+  requestAnimationFrame(() => requestAnimationFrame(drawLines));
+}
+
+/* Géométrie partagée entre le rendu SVG et l'export canvas. */
+function connectorGeometry(cardRect, planRect, pin, originX, originY) {
+  const tx = planRect.left - originX + (pin.x / 100) * planRect.width;
+  const ty = planRect.top - originY + (pin.y / 100) * planRect.height;
+  const cx = cardRect.left - originX + cardRect.width / 2;
+  const cy = cardRect.top - originY + cardRect.height / 2;
+  let sx, sy;
+  if (cardRect.bottom <= planRect.top + 2) { sx = cx; sy = cardRect.bottom - originY; }
+  else if (cardRect.top >= planRect.bottom - 2) { sx = cx; sy = cardRect.top - originY; }
+  else if (cardRect.right <= planRect.left + 2) { sx = cardRect.right - originX; sy = cy; }
+  else { sx = cardRect.left - originX; sy = cy; }
+  const mx = (sx + tx) / 2, my = (sy + ty) / 2;
+  const nx = -(ty - sy), ny = tx - sx;
+  const len = Math.hypot(nx, ny) || 1;
+  const bow = Math.min(38, len * 0.12);
+  return { sx, sy, tx, ty, qx: mx + (nx / len) * bow, qy: my + (ny / len) * bow };
+}
+
+function drawLines() {
+  const board = $("#board"), svg = $("#boardLines"), plan = $("#boardImg");
+  if (!board || !svg || !plan) return;
+  const br = board.getBoundingClientRect(), pr = plan.getBoundingClientRect();
+  svg.setAttribute("viewBox", `0 0 ${br.width} ${br.height}`);
+  svg.setAttribute("width", br.width);
+  svg.setAttribute("height", br.height);
+
+  let out = `<defs><marker id="ah" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+    <polygon points="0 0, 7 3.5, 0 7" fill="#F2C230" stroke="#8A6D00" stroke-width="0.5"/></marker></defs>`;
+  $$("[data-card]").forEach(card => {
+    const pin = state.pins.find(p => p.id === card.dataset.card);
+    if (!pin) return;
+    const g = connectorGeometry(card.getBoundingClientRect(), pr, pin, br.left, br.top);
+    out += `<path d="M ${g.sx} ${g.sy} Q ${g.qx} ${g.qy} ${g.tx} ${g.ty}" fill="none"
+      stroke="#F2C230" stroke-width="4" stroke-linecap="round" marker-end="url(#ah)" opacity=".95"/>`;
+  });
+  svg.innerHTML = out;
+}
 
 function loadImg(src) {
   return new Promise((res, rej) => {
     const i = new Image();
     i.onload = () => res(i);
-    i.onerror = rej;
+    i.onerror = () => rej(new Error("Image illisible"));
     i.src = src;
   });
 }
-
 function drawCover(ctx, img, x, y, w, h) {
   const ar = img.width / img.height, dr = w / h;
   let sw, sh, sx, sy;
@@ -315,34 +1147,42 @@ function drawCover(ctx, img, x, y, w, h) {
   else { sw = img.width; sh = sw / dr; sx = 0; sy = (img.height - sh) / 2; }
   ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
 }
-
+function roundRectPath(ctx, x, y, w, h, r) {
+  const rr = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.arcTo(x + w, y, x + w, y + h, rr);
+  ctx.arcTo(x + w, y + h, x, y + h, rr);
+  ctx.arcTo(x, y + h, x, y, rr);
+  ctx.arcTo(x, y, x + w, y, rr);
+  ctx.closePath();
+}
 function wrapText(ctx, text, maxW, maxLines) {
   const words = String(text).split(/\s+/);
   const lines = [];
   let cur = "";
   for (const w of words) {
     const t = cur ? cur + " " + w : w;
-    if (ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; if (lines.length === maxLines) break; }
-    else cur = t;
+    if (ctx.measureText(t).width > maxW && cur) {
+      lines.push(cur); cur = w;
+      if (lines.length === maxLines) break;
+    } else cur = t;
   }
   if (lines.length < maxLines && cur) lines.push(cur);
-  if (lines.length === maxLines && ctx.measureText(cur).width > maxW) {
-    while (lines[maxLines - 1].length > 3 && ctx.measureText(lines[maxLines - 1] + "…").width > maxW) {
-      lines[maxLines - 1] = lines[maxLines - 1].slice(0, -1);
-    }
-    lines[maxLines - 1] += "…";
+  if (lines.length === maxLines && ctx.measureText(lines[maxLines - 1]).width > maxW) {
+    let last = lines[maxLines - 1];
+    while (last.length > 3 && ctx.measureText(last + "…").width > maxW) last = last.slice(0, -1);
+    lines[maxLines - 1] = last + "…";
   }
   return lines;
 }
 
 async function exportPNG() {
-  const btn = document.getElementById("boardExport");
-  const board = document.getElementById("board");
-  const planEl = document.getElementById("boardImg");
+  const btn = $("#exportPng"), board = $("#board"), planEl = $("#boardImg");
   if (!board || !planEl) return;
+  const label = btn.innerHTML;
   btn.disabled = true;
   btn.textContent = "Génération…";
-
   try {
     const S = 2;
     const br = board.getBoundingClientRect();
@@ -355,96 +1195,98 @@ async function exportPNG() {
     ctx.fillRect(0, 0, br.width, br.height);
     ctx.textBaseline = "top";
 
+    // En-tête
     const head = board.querySelector(".board-head");
+    const withPhoto = state.pins.filter(p => p.photos.length);
     if (head) {
       const hr = head.getBoundingClientRect();
       ctx.textAlign = "center";
       ctx.fillStyle = "#10233F";
-      ctx.font = "700 20px -apple-system, Helvetica, Arial, sans-serif";
+      ctx.font = '700 21px -apple-system, Helvetica, Arial, sans-serif';
       ctx.fillText(state.projectName, br.width / 2, hr.top - br.top);
-      const nb = state.pins.filter(p => p.photos.length).length;
-      ctx.fillStyle = "#5A6672";
-      ctx.font = "11px -apple-system, Helvetica, Arial, sans-serif";
-      const d = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
-      ctx.fillText(`Relevé de toiture · ${nb} désordre${nb !== 1 ? "s" : ""} localisé${nb !== 1 ? "s" : ""} · ${d}`, br.width / 2, hr.top - br.top + 26);
+      ctx.fillStyle = "#64748B";
+      ctx.font = '11.5px -apple-system, Helvetica, Arial, sans-serif';
+      const meta = (state.site ? state.site + " · " : "") +
+        `Relevé de toiture · ${plural(withPhoto.length, "désordre")} localisé${withPhoto.length > 1 ? "s" : ""} · ${today()}`;
+      ctx.fillText(meta, br.width / 2, hr.top - br.top + 28);
       ctx.textAlign = "left";
     }
 
+    // Plan
     const pr = planEl.getBoundingClientRect();
     const planImg = await loadImg(state.planImage);
+    ctx.save();
+    roundRectPath(ctx, pr.left - br.left, pr.top - br.top, pr.width, pr.height, 6);
+    ctx.clip();
     ctx.drawImage(planImg, pr.left - br.left, pr.top - br.top, pr.width, pr.height);
+    ctx.restore();
     ctx.strokeStyle = "#94A3B0";
     ctx.lineWidth = 1;
-    ctx.strokeRect(pr.left - br.left, pr.top - br.top, pr.width, pr.height);
+    roundRectPath(ctx, pr.left - br.left, pr.top - br.top, pr.width, pr.height, 6);
+    ctx.stroke();
 
-    const cards = [...document.querySelectorAll("[data-card]")];
+    // Vignettes photo
+    const cards = $$("[data-card]");
     for (const card of cards) {
       const pin = state.pins.find(p => p.id === card.dataset.card);
       if (!pin) continue;
       const cr = card.getBoundingClientRect();
       const x = cr.left - br.left, y = cr.top - br.top;
-
       ctx.fillStyle = "#ffffff";
-      ctx.fillRect(x, y, cr.width, cr.height);
+      roundRectPath(ctx, x, y, cr.width, cr.height, 8);
+      ctx.fill();
 
       const imgEl = card.querySelector("img");
       const ir = imgEl.getBoundingClientRect();
-      const photo = await loadImg(pin.photos[0]);
-      drawCover(ctx, photo, ir.left - br.left, ir.top - br.top, ir.width, ir.height);
+      ctx.save();
+      roundRectPath(ctx, x + 2, y + 2, cr.width - 4, cr.height - 4, 6);
+      ctx.clip();
+      drawCover(ctx, await loadImg(pin.photos[0]), ir.left - br.left, ir.top - br.top, ir.width, ir.height);
+      ctx.restore();
 
       const capEl = card.querySelector(".cap");
       if (capEl) {
         const car = capEl.getBoundingClientRect();
         ctx.fillStyle = "#334155";
-        ctx.font = "10px -apple-system, Helvetica, Arial, sans-serif";
-        const extra = pin.photos.length > 1 ? ` (+${pin.photos.length - 1})` : "";
-        const lines = wrapText(ctx, (pin.note || "Désordre relevé") + extra, cr.width - 10, 2);
-        lines.forEach((l, i) => ctx.fillText(l, car.left - br.left + 4, car.top - br.top + 2 + i * 12));
+        ctx.font = '10px -apple-system, Helvetica, Arial, sans-serif';
+        wrapText(ctx, boardCaption(pin), cr.width - 12, 2)
+          .forEach((l, i) => ctx.fillText(l, car.left - br.left + 5, car.top - br.top + 3 + i * 12));
       }
-
       ctx.strokeStyle = "#F2C230";
-      ctx.lineWidth = 3;
-      ctx.strokeRect(x + 1.5, y + 1.5, cr.width - 3, cr.height - 3);
+      ctx.lineWidth = 2.5;
+      roundRectPath(ctx, x + 1.25, y + 1.25, cr.width - 2.5, cr.height - 2.5, 7);
+      ctx.stroke();
     }
 
+    // Connecteurs
     ctx.lineCap = "round";
     for (const card of cards) {
       const pin = state.pins.find(p => p.id === card.dataset.card);
       if (!pin) continue;
-      const cr = card.getBoundingClientRect();
-      const tx = pr.left - br.left + (pin.x / 100) * pr.width;
-      const ty = pr.top - br.top + (pin.y / 100) * pr.height;
-      const cxMid = cr.left - br.left + cr.width / 2;
-      const cyMid = cr.top - br.top + cr.height / 2;
-      let sx, sy;
-      if (cr.bottom <= pr.top + 2) { sx = cxMid; sy = cr.bottom - br.top; }
-      else if (cr.top >= pr.bottom - 2) { sx = cxMid; sy = cr.top - br.top; }
-      else if (cr.right <= pr.left + 2) { sx = cr.right - br.left; sy = cyMid; }
-      else { sx = cr.left - br.left; sy = cyMid; }
-
-      const mx = (sx + tx) / 2, my = (sy + ty) / 2;
-      const nx = -(ty - sy), ny = tx - sx;
-      const len = Math.hypot(nx, ny) || 1;
-      const bow = Math.min(38, len * 0.12);
-      const qx = mx + (nx / len) * bow, qy = my + (ny / len) * bow;
-
+      const g = connectorGeometry(card.getBoundingClientRect(), pr, pin, br.left, br.top);
       ctx.strokeStyle = "#F2C230";
       ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.moveTo(sx, sy);
-      ctx.quadraticCurveTo(qx, qy, tx, ty);
+      ctx.moveTo(g.sx, g.sy);
+      ctx.quadraticCurveTo(g.qx, g.qy, g.tx, g.ty);
       ctx.stroke();
-
-      const ang = Math.atan2(ty - qy, tx - qx);
-      ctx.fillStyle = "#F2C230";
+      // pointe de flèche calquée sur le marqueur SVG de la planche à l'écran
+      const ang = Math.atan2(g.ty - g.qy, g.tx - g.qx);
+      const HEAD = 22, HALF = 10;
+      const bx = g.tx - HEAD * Math.cos(ang), by = g.ty - HEAD * Math.sin(ang);
       ctx.beginPath();
-      ctx.moveTo(tx, ty);
-      ctx.lineTo(tx - 11 * Math.cos(ang - 0.4), ty - 11 * Math.sin(ang - 0.4));
-      ctx.lineTo(tx - 11 * Math.cos(ang + 0.4), ty - 11 * Math.sin(ang + 0.4));
+      ctx.moveTo(g.tx, g.ty);
+      ctx.lineTo(bx + HALF * Math.sin(ang), by - HALF * Math.cos(ang));
+      ctx.lineTo(bx - HALF * Math.sin(ang), by + HALF * Math.cos(ang));
       ctx.closePath();
+      ctx.fillStyle = "#F2C230";
       ctx.fill();
+      ctx.strokeStyle = "#8A6D00";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
     }
 
+    // Points sur le plan
     for (const pin of state.pins) {
       const dx = pr.left - br.left + (pin.x / 100) * pr.width;
       const dy = pr.top - br.top + (pin.y / 100) * pr.height;
@@ -457,13 +1299,15 @@ async function exportPNG() {
       ctx.stroke();
     }
 
+    // Numéros des vignettes
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     for (const card of cards) {
       const pin = state.pins.find(p => p.id === card.dataset.card);
       if (!pin) continue;
-      const cr = card.getBoundingClientRect();
-      const bx = cr.left - br.left + 2, by = cr.top - br.top + 2;
+      const numEl = card.querySelector(".num");
+      const nr = numEl.getBoundingClientRect();
+      const bx = nr.left - br.left + nr.width / 2, by = nr.top - br.top + nr.height / 2;
       ctx.beginPath();
       ctx.arc(bx, by, 11, 0, Math.PI * 2);
       ctx.fillStyle = "#E8622C";
@@ -472,305 +1316,141 @@ async function exportPNG() {
       ctx.lineWidth = 2;
       ctx.stroke();
       ctx.fillStyle = "#ffffff";
-      ctx.font = "700 12px ui-monospace, Menlo, monospace";
+      ctx.font = '700 12px ui-monospace, Menlo, monospace';
       ctx.fillText(String(pin.number), bx, by + 0.5);
     }
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
 
-    const url = canvas.toDataURL("image/png");
-    showExport(url);
+    showExport(canvas.toDataURL("image/png"));
   } catch (e) {
-    alert("Échec de la génération : " + e.message);
+    toast("Échec de la génération : " + e.message, "err", 4000);
   } finally {
     btn.disabled = false;
-    btn.textContent = "Exporter en PNG";
+    btn.innerHTML = label;
   }
 }
 
+function fileBase() {
+  return ((state.projectName || "planche").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\w\-]+/g, "_").replace(/^_+|_+$/g, "") || "planche");
+}
 function showExport(url) {
-  const name = (state.projectName || "planche").replace(/[^\w\-]+/g, "_") + ".png";
-  const ov = document.createElement("div");
-  ov.className = "export-overlay";
-  ov.innerHTML = `
-    <div class="export-box">
-      <div class="export-head">
-        <strong>Planche générée</strong>
-        <button class="export-close">✕</button>
-      </div>
-      <p class="export-hint">Appui long sur l'image → « Ajouter aux photos », ou utilise le bouton ci-dessous.</p>
-      <img src="${url}" class="export-img">
-      <a class="btn btn-accent" href="${url}" download="${name}" style="text-decoration:none">Enregistrer le fichier</a>
-    </div>`;
-  ov.querySelector(".export-close").onclick = () => ov.remove();
-  ov.onclick = (e) => { if (e.target === ov) ov.remove(); };
-  document.body.appendChild(ov);
+  const ov = overlay(`<div class="export-box">
+      <h3>Planche générée</h3>
+      <p>Appui long sur l'image → « Ajouter aux photos », ou enregistre le fichier.</p>
+      <img src="${url}" alt="Aperçu de la planche">
+      <a class="btn btn-primary btn-block" href="${url}" download="${fileBase()}.png"
+         style="text-decoration:none">${ICONS.down} Enregistrer le fichier</a>
+      <button class="btn btn-block btn-ghost" data-close style="margin-top:8px">Fermer</button>
+    </div>`);
+  $("[data-close]", ov).onclick = () => ov.remove();
 }
 
-function assignEdges() {
-  const withPhoto = state.pins.filter(p => p.photos.length > 0);
-  const edges = { top: [], bottom: [], left: [], right: [] };
-  const cap = { top: 7, bottom: 7, left: 4, right: 4 };
-  withPhoto.forEach(p => {
-    const d = { top: p.y, bottom: 100 - p.y, left: p.x, right: 100 - p.x };
-    const order = Object.keys(d).sort((a, b) => d[a] - d[b]);
-    let placed = false;
-    for (const e of order) {
-      if (edges[e].length < cap[e]) { edges[e].push(p); placed = true; break; }
-    }
-    if (!placed) edges[order[0]].push(p);
-  });
-  edges.top.sort((a, b) => a.x - b.x);
-  edges.bottom.sort((a, b) => a.x - b.x);
-  edges.left.sort((a, b) => a.y - b.y);
-  edges.right.sort((a, b) => a.y - b.y);
-  return edges;
+/* ============================================================
+   Sauvegarde JSON
+   ============================================================ */
+function download(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
-
-function photoCard(p) {
-  const extra = p.photos.length > 1 ? ` (+${p.photos.length - 1})` : "";
-  return `<div class="ph-card" data-card="${p.id}">
-    <div class="num">${p.number}</div>
-    <img src="${p.photos[0]}" alt="">
-    <div class="cap">${(p.note || "Désordre relevé")}${extra}</div>
-  </div>`;
+function exportJSON() {
+  const payload = { app: "releve-toiture", version: 6, exportedAt: new Date().toISOString(), data: state };
+  download(new Blob([JSON.stringify(payload)], { type: "application/json" }), fileBase() + ".json");
+  toast("Sauvegarde exportée", "ok");
 }
-
-function renderBoard() {
-  const edges = assignEdges();
-  const dots = state.pins.map(p =>
-    `<div class="board-dot" data-dot="${p.id}" style="left:${p.x}%;top:${p.y}%"></div>`
-  ).join("");
-  const nb = state.pins.filter(p => p.photos.length).length;
-
-  document.getElementById("app").innerHTML = `
-    <div class="board-screen">
-      <div class="board-toolbar no-print">
-        <button class="btn btn-outline" id="backBtn" style="flex:none">← Retour</button>
-        <button class="btn btn-accent" id="boardExport">Exporter en PNG</button>
-      </div>
-      <div class="board-scroll">
-        <div class="board" id="board">
-          <div class="board-head">
-            <h2>${state.projectName}</h2>
-            <div class="meta">Relevé de toiture · ${nb} désordre${nb !== 1 ? "s" : ""} localisé${nb !== 1 ? "s" : ""} · ${new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })}</div>
-          </div>
-          <div class="edge-row top" id="edgeTop">${edges.top.map(photoCard).join("")}</div>
-          <div class="board-mid">
-            <div class="edge-col" id="edgeLeft">${edges.left.map(photoCard).join("")}</div>
-            <div class="board-plan" id="boardPlan">
-              <img src="${state.planImage}" id="boardImg" alt="Plan">
-              ${dots}
-            </div>
-            <div class="edge-col" id="edgeRight">${edges.right.map(photoCard).join("")}</div>
-          </div>
-          <div class="edge-row bottom" id="edgeBottom">${edges.bottom.map(photoCard).join("")}</div>
-          <svg class="board-lines" id="boardLines"></svg>
-        </div>
-      </div>
-      ${nb === 0 ? `<div class="board-empty">Ajoute au moins une photo à un repère pour générer la planche.</div>` : ""}
-    </div>`;
-
-  document.getElementById("backBtn").onclick = () => { boardMode = false; renderAll(); };
-  document.getElementById("boardExport").onclick = exportPNG;
-
-  const img = document.getElementById("boardImg");
-  if (img && !img.complete) img.onload = drawLines;
-  requestAnimationFrame(() => requestAnimationFrame(drawLines));
-  window.onresize = () => { if (boardMode) drawLines(); };
-}
-
-function drawLines() {
-  const board = document.getElementById("board");
-  const svg = document.getElementById("boardLines");
-  const plan = document.getElementById("boardImg");
-  if (!board || !svg || !plan) return;
-
-  const br = board.getBoundingClientRect();
-  const pr = plan.getBoundingClientRect();
-  svg.setAttribute("viewBox", `0 0 ${br.width} ${br.height}`);
-  svg.setAttribute("width", br.width);
-  svg.setAttribute("height", br.height);
-
-  let paths = `<defs><marker id="ah" markerWidth="7" markerHeight="7" refX="6" refY="3.5"
-      orient="auto"><polygon points="0 0, 7 3.5, 0 7" fill="#F2C230" stroke="#8A6D00" stroke-width="0.5"/></marker></defs>`;
-
-  document.querySelectorAll("[data-card]").forEach(card => {
-    const pin = state.pins.find(p => p.id === card.dataset.card);
-    if (!pin) return;
-    const cr = card.getBoundingClientRect();
-
-    const tx = pr.left - br.left + (pin.x / 100) * pr.width;
-    const ty = pr.top - br.top + (pin.y / 100) * pr.height;
-    const cxMid = cr.left - br.left + cr.width / 2;
-    const cyMid = cr.top - br.top + cr.height / 2;
-
-    let sx, sy;
-    if (cr.bottom <= pr.top + 2) { sx = cxMid; sy = cr.bottom - br.top; }
-    else if (cr.top >= pr.bottom - 2) { sx = cxMid; sy = cr.top - br.top; }
-    else if (cr.right <= pr.left + 2) { sx = cr.right - br.left; sy = cyMid; }
-    else { sx = cr.left - br.left; sy = cyMid; }
-
-    const mx = (sx + tx) / 2, my = (sy + ty) / 2;
-    const nx = -(ty - sy), ny = tx - sx;
-    const len = Math.hypot(nx, ny) || 1;
-    const bow = Math.min(38, len * 0.12);
-    const qx = mx + (nx / len) * bow, qy = my + (ny / len) * bow;
-
-    paths += `<path d="M ${sx} ${sy} Q ${qx} ${qy} ${tx} ${ty}" fill="none"
-      stroke="#F2C230" stroke-width="4" stroke-linecap="round"
-      marker-end="url(#ah)" opacity="0.95"/>`;
-  });
-
-  svg.innerHTML = paths;
-}
-
-function renderAll() {
-  if (boardMode && state.planImage) { renderBoard(); return; }
-  const app = document.getElementById("app");
-  const pinsMarkers = state.pins.map(p =>
-    `<div class="pin-marker" style="left:${p.x}%;top:${p.y}%" data-scroll="${p.id}">${p.number}</div>`
-  ).join("");
-
-  const planSection = !state.planImage ? `
-    <label class="upload-zone no-print">
-      <div class="title">Importer le plan de toiture</div>
-      <div class="hint">Photo ou capture d'écran du plan</div>
-      <input type="file" accept="image/*" id="planInput" style="display:none">
-    </label>` : `
-    <div class="plan-viewport" id="planViewport">
-      <div class="plan-inner" id="planInner">
-        <img src="${state.planImage}" alt="Plan" id="planImg">
-        ${pinsMarkers}
-      </div>
-      ${placing ? `<div class="placing-banner">Touche le plan à l'endroit du désordre</div>` : ""}
-    </div>
-    <div class="zoom-bar no-print">
-      <button class="zoom-btn" id="zoomOut">−</button>
-      <span class="zoom-level" id="zoomLevel">100%</span>
-      <button class="zoom-btn" id="zoomIn">+</button>
-      <button class="zoom-btn" id="zoomReset" style="font-size:14px">↺</button>
-      <span class="zoom-hint">Pince pour zoomer<br>1 doigt pour déplacer</span>
-    </div>
-    <div class="actions-row no-print">
-      <button class="btn ${placing ? "btn-placing" : "btn-accent"}" id="placeBtn">${placing ? "Annuler" : "+ Ajouter un repère"}</button>
-      <button class="btn btn-outline" id="boardBtn">Planche</button>
-    </div>`;
-
-  const cards = state.pins.map(p => `
-    <div class="card" id="carte-${p.id}">
-      <div class="card-head">
-        <div class="card-title"><span class="badge">${p.number}</span> Repère ${p.number}</div>
-        <button class="del-btn no-print" data-del="${p.id}">✕</button>
-      </div>
-      <textarea class="note-input no-print" rows="2" placeholder="Description du désordre…" data-note="${p.id}">${p.note}</textarea>
-      <p class="print-note">${p.note || "—"}</p>
-      <div class="photos-row">
-        ${p.photos.map((ph, idx) => `
-          <div class="thumb">
-            <img src="${ph}">
-            <button class="rm no-print" data-rmphoto="${p.id}" data-idx="${idx}">✕</button>
-          </div>`).join("")}
-        <label class="add-photo no-print">📷
-          <input type="file" accept="image/*" capture="environment" multiple data-photoinput="${p.id}">
-        </label>
-      </div>
-    </div>`).join("");
-
-  app.innerHTML = `
-    <div class="topbar no-print">
-      <div class="topbar-row">
-        <div style="flex:1;min-width:0;">
-          <input id="nameInput" value="${state.projectName}">
-          <div class="sub">${state.pins.length} repère${state.pins.length !== 1 ? "s" : ""} · sauvegardé sur cet appareil</div>
-        </div>
-        ${!confirmingReset ? `<button class="icon-btn" id="resetBtn">↺</button>` : `
-          <div class="confirm-row">
-            <button class="mini-btn" style="background:#E8622C" id="confirmYes">Confirmer</button>
-            <button class="mini-btn" style="background:rgba(255,255,255,0.15)" id="confirmNo">Annuler</button>
-          </div>`}
-      </div>
-    </div>
-    ${saveError ? `<div class="save-error no-print">${saveError}</div>` : ""}
-    <div class="content">
-      <div class="print-header">
-        <h1>${state.projectName}</h1>
-        <div class="meta">Rapport photo · ${state.pins.length} repère${state.pins.length !== 1 ? "s" : ""} · ${new Date().toLocaleDateString("fr-FR", { day:"2-digit", month:"long", year:"numeric" })}</div>
-      </div>
-      ${planSection}
-      ${state.planImage ? `<div class="print-legend">Plan de toiture — localisation des désordres relevés</div>` : ""}
-      <div class="cards-zone" style="margin-top:14px;">${cards}</div>
-    </div>`;
-
-  attachListeners();
-}
-
-function attachListeners() {
-  const nameInput = document.getElementById("nameInput");
-  if (nameInput) nameInput.oninput = (e) => { state.projectName = e.target.value; scheduleSave(); };
-
-  const resetBtn = document.getElementById("resetBtn");
-  if (resetBtn) resetBtn.onclick = () => { confirmingReset = true; renderAll(); };
-  const confirmYes = document.getElementById("confirmYes");
-  if (confirmYes) confirmYes.onclick = () => {
-    state = { projectName: "Relevé de toiture", planImage: null, pins: [] };
-    confirmingReset = false;
-    scheduleSave();
-    renderAll();
-  };
-  const confirmNo = document.getElementById("confirmNo");
-  if (confirmNo) confirmNo.onclick = () => { confirmingReset = false; renderAll(); };
-
-  const planInput = document.getElementById("planInput");
-  if (planInput) planInput.onchange = async (e) => {
-    const file = e.target.files[0];
+async function importJSON() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "application/json,.json";
+  input.style.display = "none";
+  document.body.appendChild(input);
+  input.onchange = async () => {
+    const file = input.files?.[0];
+    input.remove();
     if (!file) return;
-    state.planImage = await compressImage(file, 1200, 0.7);
-    scheduleSave();
-    renderAll();
-  };
-
-  const viewport = document.getElementById("planViewport");
-  if (viewport) setupPlanInteraction(viewport);
-
-  const placeBtn = document.getElementById("placeBtn");
-  if (placeBtn) placeBtn.onclick = () => { placing = !placing; renderAll(); };
-
-  const boardBtn = document.getElementById("boardBtn");
-  if (boardBtn) boardBtn.onclick = () => { boardMode = true; renderAll(); };
-
-  document.querySelectorAll("[data-del]").forEach(btn => {
-    btn.onclick = () => {
-      state.pins = state.pins.filter(p => p.id !== btn.dataset.del).map((p, i) => ({ ...p, number: i + 1 }));
-      scheduleSave();
+    try {
+      const parsed = JSON.parse(await file.text());
+      const data = parsed && parsed.data ? parsed.data : parsed;
+      if (!data || typeof data !== "object" || !Array.isArray(data.pins)) throw new Error("format");
+      const ok = await confirmDialog({
+        title: "Importer cette sauvegarde ?",
+        message: `« ${data.projectName || "Sans nom"} » — ${plural((data.pins || []).length, "repère")}. Le relevé actuellement ouvert sera remplacé.`,
+        confirmLabel: "Importer", danger: true
+      });
+      if (!ok) return;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      state = loadState();
+      zoom = { s: 1, tx: 0, ty: 0 };
+      placing = null; view = "plan";
       renderAll();
-    };
-  });
-
-  document.querySelectorAll("[data-note]").forEach(ta => {
-    ta.oninput = () => {
-      const pin = state.pins.find(p => p.id === ta.dataset.note);
-      if (pin) { pin.note = ta.value; scheduleSave(); }
-    };
-  });
-
-  document.querySelectorAll("[data-photoinput]").forEach(input => {
-    input.onchange = async (e) => {
-      const files = Array.from(e.target.files || []);
-      if (!files.length) return;
-      const compressed = await Promise.all(files.map(f => compressImage(f, 700, 0.55)));
-      const pin = state.pins.find(p => p.id === input.dataset.photoinput);
-      if (pin) { pin.photos.push(...compressed); scheduleSave(); renderAll(); }
-    };
-  });
-
-  document.querySelectorAll("[data-rmphoto]").forEach(btn => {
-    btn.onclick = () => {
-      const pin = state.pins.find(p => p.id === btn.dataset.rmphoto);
-      if (pin) { pin.photos.splice(Number(btn.dataset.idx), 1); scheduleSave(); renderAll(); }
-    };
-  });
+      toast("Sauvegarde importée", "ok");
+    } catch (e) {
+      toast("Fichier de sauvegarde invalide", "err");
+    }
+  };
+  input.click();
 }
+
+/* ============================================================
+   Rapport imprimable A4
+   ============================================================ */
+function printReport() {
+  if (!state.pins.length && !state.planImage) { toast("Rien à imprimer pour l'instant", "err"); return; }
+  const root = $("#printRoot");
+  const dots = state.pins.map(p =>
+    `<div class="pr-dot" style="left:${p.x}%;top:${p.y}%">${p.number}</div>`).join("");
+  root.innerHTML = `
+    <div class="pr-head">
+      <h1>${esc(state.projectName)}</h1>
+      <div class="meta">${state.site ? esc(state.site) + " · " : ""}Rapport photo · ${
+        plural(state.pins.length, "repère")} · ${today()}</div>
+    </div>
+    ${state.planImage ? `<div class="pr-plan"><img src="${state.planImage}" alt="Plan">${dots}</div>
+      <div class="pr-legend">Plan de toiture — localisation des désordres relevés</div>` : ""}
+    ${state.pins.length ? `<div class="pr-pins">${state.pins.map(p => `
+      <div class="pr-pin">
+        <div class="pr-pin-head"><span class="n">${p.number}</span> Repère ${p.number}</div>
+        <div class="pr-note">${esc(p.note || "—")}</div>
+        <div class="pr-photos">${p.photos.slice(0, 4).map(ph => `<img src="${ph}" alt="">`).join("")}</div>
+        ${p.photos.length > 4 ? `<div class="pr-more">+ ${p.photos.length - 4} photo(s) non imprimée(s)</div>` : ""}
+      </div>`).join("")}</div>` : ""}`;
+  document.body.classList.add("printing");
+  const cleanup = () => { document.body.classList.remove("printing"); root.innerHTML = ""; };
+  window.addEventListener("afterprint", cleanup, { once: true });
+  setTimeout(() => { window.print(); setTimeout(cleanup, 1200); }, 120);
+}
+
+/* ============================================================
+   Rendu global
+   ============================================================ */
+function renderAll() {
+  renderHeader();
+  renderTabs();
+  if (view === "plan") renderPlanView();
+  else if (view === "pins") renderPinsView();
+  else renderBoardView();
+}
+
+window.addEventListener("resize", () => { if (view === "board") drawLines(); else applyZoom(); });
+window.addEventListener("paste", e => {
+  if (view !== "plan" || state.planImage) return;
+  const file = Array.from(e.clipboardData?.files || [])[0];
+  if (file) setPlanFromFile(file);
+});
+window.addEventListener("keydown", e => {
+  if (e.key === "Escape") {
+    const ov = document.querySelector(".scrim, .lightbox");
+    if (ov) ov.remove();
+    else if (placing) { placing = null; renderAll(); }
+  }
+});
 
 renderAll();
 </script>
